@@ -31,7 +31,7 @@ export function NavBar() {
   };
 
   return (
-    <nav className="sticky bottom-0 sm:bottom-auto sm:top-0 z-40 border-t border-white/10 bg-surface/95 backdrop-blur-sm sm:border-t-0 sm:border-b">
+    <nav className="fixed inset-x-0 bottom-0 sm:sticky sm:inset-x-auto sm:bottom-auto sm:top-0 z-40 w-full border-t border-white/10 bg-surface/95 backdrop-blur-sm sm:border-t-0 sm:border-b">
       <div className="mx-auto flex max-w-2xl items-stretch justify-between px-1 sm:justify-center sm:gap-1 sm:py-2">
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;

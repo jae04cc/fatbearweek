@@ -97,7 +97,7 @@ export default function BracketPage() {
         )}
       </header>
 
-      <main className="flex-1 px-5 pb-32 space-y-8">
+      <main className="flex-1 px-5 pb-24 space-y-8">
         {byRound.map((roundMatchups, idx) => (
           <section key={idx}>
             <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">
@@ -120,17 +120,16 @@ export default function BracketPage() {
             </div>
           </section>
         ))}
+
+        {error && <p className="text-sm text-danger">{error}</p>}
       </main>
 
       {!bracketLocked && (
-        <footer className="fixed bottom-16 sm:bottom-0 left-0 right-0 border-t border-white/10 bg-surface/95 backdrop-blur-sm px-5 py-4">
-          <div className="mx-auto max-w-2xl flex items-center gap-3">
-            {error && <p className="flex-1 text-sm text-danger">{error}</p>}
-            <Button onClick={handleSave} loading={saving} className="ml-auto">
-              {saved ? "Saved!" : "Save my bracket"}
-            </Button>
-          </div>
-        </footer>
+        <div className="fixed bottom-20 right-5 sm:bottom-6 sm:right-6 z-30">
+          <Button onClick={handleSave} loading={saving} className="shadow-xl shadow-black/40">
+            {saved ? "Saved!" : "Save my bracket"}
+          </Button>
+        </div>
       )}
     </div>
   );

@@ -38,9 +38,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen text-neutral-100 antialiased">
         <SessionProvider>
           <AuthGuard>
+            <NavBar />
             <div className="mx-auto max-w-2xl min-h-screen flex flex-col">
-              <NavBar />
-              <div className="flex-1">{children}</div>
+              <div className="flex-1 pb-20 sm:pb-0">{children}</div>
             </div>
           </AuthGuard>
         </SessionProvider>
