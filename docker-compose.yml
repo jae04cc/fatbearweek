@@ -1,0 +1,21 @@
+services:
+  fatbearweek:
+    build: .
+    container_name: fatbearweek
+    restart: unless-stopped
+    ports:
+      # Host port 3010 — adjust if that's already taken on this host (scorecard uses 3000)
+      - "3010:3000"
+    volumes:
+      # SQLite database and uploaded bear photos both persist here
+      - ./data:/data
+    environment:
+      - DATABASE_PATH=/data/fatbearweek.db
+      - UPLOADS_DIR=/data/uploads
+      - NODE_ENV=production
+    # Optional: set a timezone
+    # - TZ=America/New_York
+
+  # Point Pangolin at this container's exposed port (3010 on the host, or the
+  # service name/3000 internally on the Docker network) — no reverse-proxy
+  # labels are needed here, Pangolin is configured separately.

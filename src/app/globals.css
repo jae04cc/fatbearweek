@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  background-color: #0d1410;
+}
+
+body {
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  background: linear-gradient(135deg, #0d1410 0%, #14201a 50%, #1a1410 100%);
+  background-attachment: fixed;
+  overscroll-behavior: none;
+}
+
+/* Large, comfortable tap targets for mobile */
+button, [role="button"] {
+  min-height: 44px;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

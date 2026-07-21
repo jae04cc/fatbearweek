@@ -1,0 +1,16 @@
+{
+  "name": "Fat Bear Week",
+  "short_name": "FatBearWeek",
+  "description": "Bracket pool for Fat Bear Week",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1410",
+  "theme_color": "#0d1410",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
