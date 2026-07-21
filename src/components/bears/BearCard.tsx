@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bear } from "@/lib/db/schema";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ImageLightbox } from "@/components/ui/ImageLightbox";
+import { cn } from "@/lib/utils";
 
 export function BearCard({ bear }: { bear: Bear }) {
   const [zoomed, setZoomed] = useState<{ src: string; alt: string } | null>(null);
@@ -37,13 +38,41 @@ export function BearCard({ bear }: { bear: Bear }) {
         {bear.bio && (
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Biography</p>
-            <p className="text-sm text-neutral-400">{bear.bio}</p>
+            <ExpandableText text={bear.bio} />
           </div>
         )}
       </CardBody>
 
       {zoomed && <ImageLightbox src={zoomed.src} alt={zoomed.alt} onClose={() => setZoomed(null)} />}
     </Card>
+  );
+}
+
+function ExpandableText({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [needsToggle, setNeedsToggle] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (el) setNeedsToggle(el.scrollHeight > el.clientHeight + 1);
+  }, [text]);
+
+  return (
+    <div>
+      <p ref={ref} className={cn("text-sm text-neutral-400", !expanded && "line-clamp-3")}>
+        {text}
+      </p>
+      {needsToggle && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 text-xs font-semibold text-accent-light"
+        >
+          {expanded ? "Collapse" : "Expand"}
+        </button>
+      )}
+    </div>
   );
 }
 

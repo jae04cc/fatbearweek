@@ -1,11 +1,9 @@
 "use client";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { resolveContestants, pruneInvalidPicks } from "@/lib/bracket/topology";
-import { Card, CardBody } from "@/components/ui/Card";
+import { BracketMatchBox } from "@/components/bracket/BracketMatchBox";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { cn } from "@/lib/utils";
 import { Lock } from "lucide-react";
 
 const ROUND_LABELS: Record<number, string> = {
@@ -14,6 +12,23 @@ const ROUND_LABELS: Record<number, string> = {
   3: "Final Four",
   4: "Championship",
 };
+
+// Grid row 1 is the header row; rows 2-5 are the 4 base units that Round 1
+// and Round 2 sit in 1:1. Round 3 merges pairs of Round 2 rows, and
+// Round 4 merges both Round 3 rows — the classic bracket "elbow" shape,
+// expressed as CSS grid-row spans instead of hand-computed pixel math.
+function baseRow(position: number) {
+  return `${position + 1} / ${position + 2}`;
+}
+function mergedRow(position: number) {
+  return `${2 * position} / ${2 * position + 2}`;
+}
+const FINAL_ROW = "2 / 6";
+
+// Columns: 1=Round1, 2=gutter (Round1→Round2 connector + bye indicator),
+// 3=Round2, 4=gutter (→Final Four), 5=Final Four, 6=gutter (→Championship), 7=Championship
+const GRID_TEMPLATE_COLUMNS = "220px 56px 220px 28px 220px 28px 220px";
+const GRID_TEMPLATE_ROWS = "auto repeat(4, minmax(128px, auto))";
 
 export default function BracketPage() {
   const [bears, setBears] = useState<Bear[]>([]);
@@ -24,6 +39,27 @@ export default function BracketPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLElement>(null);
+
+  // Lets a plain vertical mouse wheel scroll the bracket sideways (desktop
+  // mice have no horizontal wheel) — without this, mouse users would have no
+  // way to reach the rest of the bracket short of dragging a scrollbar we
+  // intentionally hide (see the .no-scrollbar class) to keep it clean on mobile.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        el.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+    // Re-run once loading flips to false — that's when <main> actually
+    // mounts and scrollRef.current stops being null (it's still the loading
+    // spinner, not <main>, on the very first render).
+  }, [loading]);
 
   useEffect(() => {
     Promise.all([fetch("/api/bears").then((r) => r.json()), fetch("/api/bracket").then((r) => r.json())]).then(
@@ -81,14 +117,13 @@ export default function BracketPage() {
     );
   }
 
-  const byRound = [1, 2, 3, 4].map((round) =>
-    matchups.filter((m) => m.round === round).sort((a, b) => a.position - b.position)
-  );
+  const byRound = (round: number) => matchups.filter((m) => m.round === round).sort((a, b) => a.position - b.position);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <header className="px-5 pt-10 pb-4">
         <h1 className="text-2xl font-black text-neutral-50">My Bracket</h1>
+        <p className="mt-0.5 text-xs text-neutral-500 sm:hidden">Scroll sideways to see the full bracket →</p>
         {bracketLocked && (
           <div className="mt-3 flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-4 py-2.5 text-sm text-warning">
             <Lock size={16} />
@@ -97,31 +132,126 @@ export default function BracketPage() {
         )}
       </header>
 
-      <main className="flex-1 px-5 pb-24 space-y-8">
-        {byRound.map((roundMatchups, idx) => (
-          <section key={idx}>
-            <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">
-              {ROUND_LABELS[idx + 1]}
-            </h2>
-            <div className="space-y-3">
-              {roundMatchups.map((m) => {
-                const r = resolvedById.get(m.id);
-                return (
-                  <MatchupPicker
-                    key={m.id}
-                    bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
-                    bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
-                    picked={picks[m.id]}
-                    disabled={bracketLocked}
-                    onPick={(bearId) => pickBear(m.id, bearId)}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        ))}
+      <main ref={scrollRef} className="no-scrollbar flex-1 overflow-x-auto px-5 pb-24">
+        <div className="grid gap-x-3 gap-y-4" style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gridTemplateRows: GRID_TEMPLATE_ROWS }}>
+          {/* Column headers */}
+          <div style={{ gridColumn: 1, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
+            {ROUND_LABELS[1]}
+          </div>
+          <div style={{ gridColumn: 3, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
+            {ROUND_LABELS[2]}
+          </div>
+          <div style={{ gridColumn: 5, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
+            {ROUND_LABELS[3]}
+          </div>
+          <div style={{ gridColumn: 7, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
+            {ROUND_LABELS[4]}
+          </div>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+          {/* Round 1 */}
+          {byRound(1).map((m) => {
+            const r = resolvedById.get(m.id);
+            return (
+              <div key={m.id} style={{ gridColumn: 1, gridRow: baseRow(m.position) }} className="flex items-center">
+                <BracketMatchBox
+                  bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
+                  bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
+                  picked={picks[m.id]}
+                  disabled={bracketLocked}
+                  onPick={(bearId) => pickBear(m.id, bearId)}
+                />
+              </div>
+            );
+          })}
+
+          {/* Connector: Round 1 → Round 2, with the bye bear joining "off to the side" */}
+          {byRound(2).map((m) => {
+            const byeBear = m.bearAId ? bearsById.get(m.bearAId) : undefined;
+            return (
+              <div
+                key={`bye-${m.id}`}
+                style={{ gridColumn: 2, gridRow: baseRow(m.position) }}
+                className="flex flex-col items-center justify-center gap-1"
+              >
+                {byeBear && (
+                  <div className="flex items-center gap-1 rounded-full border border-dashed border-warning/40 bg-warning/10 px-1.5 py-0.5">
+                    {byeBear.photoAfterUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={byeBear.photoAfterUrl} alt="" className="h-4 w-4 rounded-full object-cover" />
+                    ) : (
+                      <span className="text-[10px]">🐻</span>
+                    )}
+                    <span className="text-[8px] font-bold uppercase tracking-wide text-warning">Bye</span>
+                  </div>
+                )}
+                <div className="h-px w-full bg-white/15" />
+              </div>
+            );
+          })}
+
+          {/* Round 2 */}
+          {byRound(2).map((m) => {
+            const r = resolvedById.get(m.id);
+            return (
+              <div key={m.id} style={{ gridColumn: 3, gridRow: baseRow(m.position) }} className="flex items-center">
+                <BracketMatchBox
+                  bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
+                  bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
+                  byeBearId={m.bearAId ?? undefined}
+                  picked={picks[m.id]}
+                  disabled={bracketLocked}
+                  onPick={(bearId) => pickBear(m.id, bearId)}
+                />
+              </div>
+            );
+          })}
+
+          {/* Connector: Round 2 → Final Four */}
+          {[1, 2].map((position) => (
+            <div key={position} style={{ gridColumn: 4, gridRow: mergedRow(position) }} className="flex justify-center">
+              <div className="w-px bg-white/15" />
+            </div>
+          ))}
+
+          {/* Final Four */}
+          {byRound(3).map((m) => {
+            const r = resolvedById.get(m.id);
+            return (
+              <div key={m.id} style={{ gridColumn: 5, gridRow: mergedRow(m.position) }} className="flex items-center">
+                <BracketMatchBox
+                  bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
+                  bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
+                  picked={picks[m.id]}
+                  disabled={bracketLocked}
+                  onPick={(bearId) => pickBear(m.id, bearId)}
+                />
+              </div>
+            );
+          })}
+
+          {/* Connector: Final Four → Championship */}
+          <div style={{ gridColumn: 6, gridRow: FINAL_ROW }} className="flex justify-center">
+            <div className="w-px bg-white/15" />
+          </div>
+
+          {/* Championship */}
+          {byRound(4).map((m) => {
+            const r = resolvedById.get(m.id);
+            return (
+              <div key={m.id} style={{ gridColumn: 7, gridRow: FINAL_ROW }} className="flex items-center">
+                <BracketMatchBox
+                  bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
+                  bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
+                  picked={picks[m.id]}
+                  disabled={bracketLocked}
+                  onPick={(bearId) => pickBear(m.id, bearId)}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {error && <p className="mt-4 text-sm text-danger">{error}</p>}
       </main>
 
       {!bracketLocked && (
@@ -132,51 +262,5 @@ export default function BracketPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function MatchupPicker({
-  bearA,
-  bearB,
-  picked,
-  disabled,
-  onPick,
-}: {
-  bearA?: Bear;
-  bearB?: Bear;
-  picked?: string;
-  disabled: boolean;
-  onPick: (bearId: string) => void;
-}) {
-  if (!bearA || !bearB) {
-    return (
-      <Card>
-        <CardBody className="text-sm text-neutral-500 text-center py-6">Waiting on an earlier round's pick…</CardBody>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardBody className="flex-row gap-2 p-2">
-        {[bearA, bearB].map((bear) => (
-          <button
-            key={bear.id}
-            type="button"
-            disabled={disabled}
-            onClick={() => onPick(bear.id)}
-            className={cn(
-              "flex-1 rounded-xl border px-3 py-3 text-left transition-colors disabled:cursor-not-allowed",
-              picked === bear.id ? "border-success bg-success/10" : "border-white/10 bg-surface-elevated"
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-neutral-100">{bear.name}</span>
-              <Badge variant="accent">#{bear.number}</Badge>
-            </div>
-          </button>
-        ))}
-      </CardBody>
-    </Card>
   );
 }

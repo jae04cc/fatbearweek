@@ -5,11 +5,19 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { AnnouncementBody } from "@/components/home/AnnouncementBody";
 import type { HomeContentBlock } from "@/lib/settings";
 
+interface Stat {
+  label: string;
+  count: number;
+  total: number;
+  barClassName: string;
+}
+
 export default function HomePage() {
   const { data: session } = useSession();
   const [blocks, setBlocks] = useState<HomeContentBlock[]>([]);
   const [bracketLocked, setBracketLocked] = useState(false);
   const [paid, setPaid] = useState({ paid: 0, total: 0 });
+  const [completed, setCompleted] = useState({ completed: 0, total: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,6 +27,7 @@ export default function HomePage() {
         setBlocks(data.blocks ?? []);
         setBracketLocked(data.bracketLocked ?? false);
         setPaid(data.paid ?? { paid: 0, total: 0 });
+        setCompleted(data.completed ?? { completed: 0, total: 0 });
         setLoading(false);
       });
   }, []);
@@ -31,7 +40,10 @@ export default function HomePage() {
     );
   }
 
-  const paidPct = paid.total > 0 ? Math.round((paid.paid / paid.total) * 100) : 0;
+  const stats: Stat[] = [
+    { label: "Paid up", count: paid.paid, total: paid.total, barClassName: "bg-success" },
+    { label: "Brackets completed", count: completed.completed, total: completed.total, barClassName: "bg-accent" },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -43,6 +55,26 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1 px-5 pb-10 space-y-4">
+        {!bracketLocked && paid.total > 0 && (
+          <Card>
+            <CardBody className="gap-3">
+              {stats.map((stat) => {
+                const pct = stat.total > 0 ? Math.round((stat.count / stat.total) * 100) : 0;
+                return (
+                  <div key={stat.label}>
+                    <p className="text-sm font-semibold text-neutral-300">
+                      {stat.label}: {stat.count} of {stat.total}
+                    </p>
+                    <div className="mt-1 flex h-2.5 w-full overflow-hidden rounded-full bg-black/30">
+                      <div className={`h-full ${stat.barClassName}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </CardBody>
+          </Card>
+        )}
+
         {blocks.length === 0 ? (
           <p className="text-neutral-500 text-sm">No announcements yet.</p>
         ) : (
@@ -58,19 +90,6 @@ export default function HomePage() {
               </CardBody>
             </Card>
           ))
-        )}
-
-        {!bracketLocked && paid.total > 0 && (
-          <Card>
-            <CardBody className="gap-2">
-              <p className="text-sm font-semibold text-neutral-300">
-                Paid up: {paid.paid} of {paid.total}
-              </p>
-              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-black/30">
-                <div className="h-full bg-success" style={{ width: `${paidPct}%` }} />
-              </div>
-            </CardBody>
-          </Card>
         )}
       </main>
     </div>

@@ -19,8 +19,11 @@ export function NavBar() {
 
   if (status !== "authenticated" || pathname === "/login") return null;
 
-  const links = session?.user.isAdmin ? [...LINKS, { href: "/admin", label: "Admin", icon: Settings }] : LINKS;
-  links.push({ href: "/account", label: "Account", icon: CircleUser });
+  const links = [
+    ...LINKS,
+    ...(session?.user.isAdmin ? [{ href: "/admin", label: "Admin", icon: Settings }] : []),
+    { href: "/account", label: "Account", icon: CircleUser },
+  ];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 sm:sticky sm:inset-x-auto sm:bottom-auto sm:top-0 z-40 w-full border-t border-white/10 bg-surface/95 backdrop-blur-sm sm:border-t-0 sm:border-b">

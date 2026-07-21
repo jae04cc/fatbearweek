@@ -35,4 +35,14 @@ input[type="number"] {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Scrollable but no visible scrollbar — used for the horizontal bracket,
+     which scrolls via mouse wheel/touch/drag but shouldn't show a bar on mobile. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
