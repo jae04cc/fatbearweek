@@ -19,8 +19,9 @@ export function NavBar() {
 
   if (status !== "authenticated" || pathname === "/login") return null;
 
+  // The bootstrap operator account isn't a player — it has no bracket to fill out
   const links = [
-    ...LINKS,
+    ...LINKS.filter((link) => !(link.href === "/bracket" && session?.user.isBootstrap)),
     ...(session?.user.isAdmin ? [{ href: "/admin", label: "Admin", icon: Settings }] : []),
     { href: "/account", label: "Account", icon: CircleUser },
   ];

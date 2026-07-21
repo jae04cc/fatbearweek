@@ -69,3 +69,11 @@ export function isValidUsername(username: string): boolean {
 export function isValidDisplayName(name: string): boolean {
   return /^[a-zA-Z0-9 ]+$/.test(name);
 }
+
+// "admin" is reserved for the single bootstrap operator account — no one
+// (self-signup or admin-created) can claim it for a new account.
+const RESERVED_USERNAMES = new Set(["admin"]);
+
+export function isReservedUsername(username: string): boolean {
+  return RESERVED_USERNAMES.has(username.trim().toLowerCase());
+}

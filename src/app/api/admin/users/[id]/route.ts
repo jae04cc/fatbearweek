@@ -33,6 +33,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       );
     }
 
+    if (body.isAdmin === false && user.isBootstrap) {
+      return NextResponse.json({ error: "The bootstrap admin account can't be demoted." }, { status: 409 });
+    }
+
     if (body.isAdmin === false && user.isAdmin) {
       const adminCount = await countAdmins();
       if (adminCount === 1) {
@@ -61,6 +65,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
 
   const user = await db.query.users.findFirst({ where: eq(users.id, params.id) });
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  if (user.isBootstrap) {
+    return NextResponse.json({ error: "The bootstrap admin account can't be deleted." }, { status: 409 });
+  }
 
   if (user.isAdmin) {
     const adminCount = await countAdmins();

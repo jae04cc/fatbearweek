@@ -218,15 +218,19 @@ function UserRow({
               />
             </label>
           )}
-          <Button size="sm" variant="secondary" disabled={busyRole} onClick={onToggleRole}>
-            {user.isAdmin ? "Demote" : "Promote"}
-          </Button>
+          {!user.isBootstrap && (
+            <Button size="sm" variant="secondary" disabled={busyRole} onClick={onToggleRole}>
+              {user.isAdmin ? "Demote" : "Promote"}
+            </Button>
+          )}
           <Button size="sm" variant="secondary" onClick={onStartReset} title="Reset password">
             <KeyRound size={14} />
           </Button>
-          <Button size="sm" variant="danger" onClick={onDelete}>
-            <Trash2 size={14} />
-          </Button>
+          {!user.isBootstrap && (
+            <Button size="sm" variant="danger" onClick={onDelete}>
+              <Trash2 size={14} />
+            </Button>
+          )}
         </div>
 
         {resetting && (

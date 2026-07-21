@@ -90,10 +90,15 @@ export async function runMigrations() {
   const userCols = await client.execute("PRAGMA table_info(users)");
   if (!userCols.rows.some((r) => r[1] === "is_bootstrap")) {
     await client.execute("ALTER TABLE users ADD COLUMN is_bootstrap INTEGER NOT NULL DEFAULT 0");
+    // One-time backfill, only for databases that predate this column: the
+    // literal "admin" account at that moment must have been the real
+    // system-generated bootstrap account, so flag it retroactively. This
+    // must NOT run on every restart — if it did, anyone creating a brand
+    // new ordinary user literally named "admin" later on would silently
+    // inherit bootstrap status forever, which is exactly the bug this
+    // one-time guard avoids.
+    await client.execute("UPDATE users SET is_bootstrap = 1 WHERE username = 'admin'");
   }
-  // Backfill: the literal "admin" bootstrap account predates this flag on
-  // any database created before this migration — flag it retroactively.
-  await client.execute("UPDATE users SET is_bootstrap = 1 WHERE username = 'admin' AND is_bootstrap = 0");
 
   // Additive column migration for databases created before identification existed
   const bearCols = await client.execute("PRAGMA table_info(bears)");

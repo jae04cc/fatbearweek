@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { resolveContestants, pruneInvalidPicks } from "@/lib/bracket/topology";
 import { BracketMatchBox } from "@/components/bracket/BracketMatchBox";
@@ -55,6 +57,8 @@ const GRID_TEMPLATE_COLUMNS = "220px 28px 220px 28px 220px 28px 220px";
 const GRID_TEMPLATE_ROWS = "auto repeat(4, minmax(128px, auto))";
 
 export default function BracketPage() {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [bears, setBears] = useState<Bear[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [picks, setPicks] = useState<Record<string, string>>({});
@@ -64,6 +68,12 @@ export default function BracketPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLElement>(null);
+
+  // The bootstrap operator account isn't a player — send it away even if it
+  // navigates here directly, since the nav link is already hidden for it.
+  useEffect(() => {
+    if (session?.user.isBootstrap) router.replace("/");
+  }, [session, router]);
 
   // Lets a plain vertical mouse wheel scroll the bracket sideways (desktop
   // mice have no horizontal wheel) — without this, mouse users would have no

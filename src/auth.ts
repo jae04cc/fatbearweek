@@ -13,6 +13,7 @@ declare module "next-auth" {
     user: {
       id: string;
       isAdmin: boolean;
+      isBootstrap: boolean;
       displayName: string | null;
     } & DefaultSession["user"];
   }
@@ -74,6 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
             id: user.id,
             name: user.displayName ?? user.username,
             isAdmin: user.isAdmin,
+            isBootstrap: user.isBootstrap,
             displayName: user.displayName,
           };
         },
@@ -85,6 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
         if (user) {
           token.userId = user.id;
           token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
+          token.isBootstrap = (user as { isBootstrap?: boolean }).isBootstrap ?? false;
           token.displayName = (user as { displayName?: string | null }).displayName ?? null;
         }
         // Client called `update({ displayName })` after a self-service edit —
@@ -97,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
       async session({ session, token }) {
         session.user.id = (token.userId as string | undefined) ?? "";
         session.user.isAdmin = (token.isAdmin as boolean | undefined) ?? false;
+        session.user.isBootstrap = (token.isBootstrap as boolean | undefined) ?? false;
         session.user.displayName = (token.displayName as string | null | undefined) ?? null;
         return session;
       },

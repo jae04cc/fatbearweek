@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { getSignupCode } from "@/lib/settings";
 import { hashPassword } from "@/lib/password";
-import { generateId, normalizeDisplayName, isValidUsername, isValidDisplayName } from "@/lib/utils";
+import { generateId, normalizeDisplayName, isValidUsername, isValidDisplayName, isReservedUsername } from "@/lib/utils";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
     }
     if (!isValidUsername(username.trim())) {
       return NextResponse.json({ error: "Username can only contain letters and numbers." }, { status: 400 });
+    }
+    if (isReservedUsername(username)) {
+      return NextResponse.json({ error: "That username is reserved." }, { status: 400 });
     }
     if (displayName?.trim() && !isValidDisplayName(displayName.trim())) {
       return NextResponse.json(
