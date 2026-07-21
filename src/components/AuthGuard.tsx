@@ -3,21 +3,24 @@ import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-// This is a private pool — every page requires a logged-in user except /login.
+const PUBLIC_PATHS = ["/login", "/signup"];
+
+// This is a private pool — every page requires a logged-in user except the
+// public entry points above.
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
-  const isLoginPage = pathname === "/login";
+  const isPublicPage = PUBLIC_PATHS.includes(pathname);
 
   useEffect(() => {
-    if (!isLoginPage && status === "unauthenticated") {
+    if (!isPublicPage && status === "unauthenticated") {
       router.replace("/login");
     }
-  }, [isLoginPage, status, router]);
+  }, [isPublicPage, status, router]);
 
-  if (isLoginPage) return <>{children}</>;
+  if (isPublicPage) return <>{children}</>;
 
   if (status !== "authenticated") {
     return (

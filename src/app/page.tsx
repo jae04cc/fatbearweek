@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardBody } from "@/components/ui/Card";
+import { AnnouncementBody } from "@/components/home/AnnouncementBody";
 import type { HomeContentBlock } from "@/lib/settings";
 
 export default function HomePage() {
@@ -47,9 +48,13 @@ export default function HomePage() {
         ) : (
           blocks.map((block) => (
             <Card key={block.id}>
+              {block.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={block.imageUrl} alt="" className="max-h-80 w-full rounded-t-2xl object-cover" />
+              )}
               <CardBody className="gap-1.5">
                 {block.title && <h2 className="text-lg font-bold text-neutral-50">{block.title}</h2>}
-                <p className="text-sm text-neutral-300 whitespace-pre-wrap">{block.body}</p>
+                <AnnouncementBody body={block.body} />
               </CardBody>
             </Card>
           ))

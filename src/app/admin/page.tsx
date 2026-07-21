@@ -7,6 +7,7 @@ import { LockPanel } from "@/components/admin/LockPanel";
 import { BracketSetup } from "@/components/admin/BracketSetup";
 import { HomeContentEditor } from "@/components/admin/HomeContentEditor";
 import { UserPaidTable } from "@/components/admin/UserPaidTable";
+import { SignupCodePanel } from "@/components/admin/SignupCodePanel";
 
 type Tab = "bears" | "setup" | "lock" | "home" | "users";
 
@@ -51,7 +52,12 @@ export default function AdminPage() {
         {activeTab === "setup" && <BracketSetup />}
         {activeTab === "lock" && <LockPanel />}
         {activeTab === "home" && <HomeContentEditor />}
-        {activeTab === "users" && <UserPaidTable />}
+        {activeTab === "users" && (
+          <div className="space-y-4">
+            <SignupCodePanel />
+            <UserPaidTable />
+          </div>
+        )}
       </main>
     </div>
   );

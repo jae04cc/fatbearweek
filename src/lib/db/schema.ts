@@ -69,6 +69,10 @@ export const users = sqliteTable("users", {
   oidcSub: text("oidc_sub").unique(),
   displayName: text("display_name"),
   isAdmin: integer("is_admin", { mode: "boolean" }).notNull().default(false),
+  // True only for the single auto-created bootstrap operator account — never
+  // a real player. Excluded from stats/leaderboard/paid tracking entirely.
+  // Other admins (promoted real users) are NOT bootstrap and ARE players.
+  isBootstrap: integer("is_bootstrap", { mode: "boolean" }).notNull().default(false),
   // Admin-tracked payment checkbox — payment itself happens outside the app
   hasPaid: integer("has_paid", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),

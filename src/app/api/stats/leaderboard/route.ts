@@ -15,8 +15,9 @@ export async function GET() {
     db.query.userPicks.findMany(),
   ]);
 
-  // Admins are pool operators, not players — they never appear in player-facing stats
-  const players = allUsers.filter((u) => !u.isAdmin);
+  // Only the bootstrap operator account is excluded — every other user
+  // (including other admins) is a real player
+  const players = allUsers.filter((u) => !u.isBootstrap);
   const playerIds = new Set(players.map((u) => u.id));
   const playerPicks = allPicks.filter((p) => playerIds.has(p.userId));
 

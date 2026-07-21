@@ -15,8 +15,9 @@ export async function GET() {
     db.query.users.findMany(),
   ]);
 
-  // Admins are pool operators, not players — excluded from the paid summary
-  const players = allUsers.filter((u) => !u.isAdmin);
+  // Only the bootstrap operator account is excluded — every other user
+  // (including other admins) is a real player
+  const players = allUsers.filter((u) => !u.isBootstrap);
   const paidCount = players.filter((u) => u.hasPaid).length;
 
   return NextResponse.json({

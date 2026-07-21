@@ -80,12 +80,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
       }),
     ],
     callbacks: {
-      async jwt({ token, user }) {
+      async jwt({ token, user, trigger, session }) {
         // `user` is only present on initial sign-in
         if (user) {
           token.userId = user.id;
           token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
           token.displayName = (user as { displayName?: string | null }).displayName ?? null;
+        }
+        // Client called `update({ displayName })` after a self-service edit —
+        // merge it in immediately instead of waiting for the next sign-in.
+        if (trigger === "update" && session?.displayName !== undefined) {
+          token.displayName = session.displayName;
         }
         return token;
       },

@@ -24,10 +24,18 @@ export async function getCurrentRound(): Promise<number> {
   return Number.isFinite(parsed) && parsed >= 1 && parsed <= 4 ? parsed : 1;
 }
 
+// Shared invite code gating self-service sign-up — stored in plaintext (not
+// hashed) since, unlike a password, the admin needs to be able to read it
+// back to share it with people, and it isn't tied to any one identity.
+export async function getSignupCode(): Promise<string | null> {
+  return getSetting("signup_code");
+}
+
 export interface HomeContentBlock {
   id: string;
   title: string;
   body: string;
+  imageUrl?: string;
 }
 
 export async function getHomeContent(): Promise<HomeContentBlock[]> {

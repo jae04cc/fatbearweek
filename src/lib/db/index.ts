@@ -63,6 +63,7 @@ export async function runMigrations() {
       oidc_sub TEXT UNIQUE,
       display_name TEXT,
       is_admin INTEGER NOT NULL DEFAULT 0,
+      is_bootstrap INTEGER NOT NULL DEFAULT 0,
       has_paid INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL,
       last_login_at INTEGER
@@ -83,6 +84,15 @@ export async function runMigrations() {
       value TEXT NOT NULL
     );
   `);
+
+  // Additive column migration for databases created before is_bootstrap existed
+  const userCols = await client.execute("PRAGMA table_info(users)");
+  if (!userCols.rows.some((r) => r[1] === "is_bootstrap")) {
+    await client.execute("ALTER TABLE users ADD COLUMN is_bootstrap INTEGER NOT NULL DEFAULT 0");
+  }
+  // Backfill: the literal "admin" bootstrap account predates this flag on
+  // any database created before this migration — flag it retroactively.
+  await client.execute("UPDATE users SET is_bootstrap = 1 WHERE username = 'admin' AND is_bootstrap = 0");
 }
 
 // Called once at server startup, after runMigrations(). If no users exist yet,
@@ -104,6 +114,7 @@ export async function bootstrapAdmin() {
     passwordHash,
     displayName: "Admin",
     isAdmin: true,
+    isBootstrap: true,
     hasPaid: false,
     createdAt: new Date(now),
   });
