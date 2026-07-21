@@ -112,6 +112,23 @@ export function BearEditor() {
         <Badge variant={byeCount === 4 ? "success" : "warning"}>{byeCount}/4 byes</Badge>
       </div>
 
+      <div className="space-y-3">
+        {bears.map((bear) => (
+          <BearRow
+            key={bear.id}
+            bear={bear}
+            draft={drafts[bear.id]}
+            onChange={(patch) => updateDraft(bear.id, patch)}
+            onSave={() => handleSave(bear.id)}
+            onDelete={() => handleDelete(bear.id)}
+            onPhotoUploaded={load}
+            saving={savingId === bear.id}
+          />
+        ))}
+      </div>
+
+      {error && <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
+
       <Card>
         <CardBody className="gap-3">
           <p className="text-sm font-semibold text-neutral-300">Add a bear</p>
@@ -132,23 +149,6 @@ export function BearEditor() {
           </Button>
         </CardBody>
       </Card>
-
-      {error && <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
-
-      <div className="space-y-3">
-        {bears.map((bear) => (
-          <BearRow
-            key={bear.id}
-            bear={bear}
-            draft={drafts[bear.id]}
-            onChange={(patch) => updateDraft(bear.id, patch)}
-            onSave={() => handleSave(bear.id)}
-            onDelete={() => handleDelete(bear.id)}
-            onPhotoUploaded={load}
-            saving={savingId === bear.id}
-          />
-        ))}
-      </div>
     </div>
   );
 }
