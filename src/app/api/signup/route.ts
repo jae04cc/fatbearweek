@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { getSignupCode } from "@/lib/settings";
 import { hashPassword } from "@/lib/password";
-import { generateId } from "@/lib/utils";
+import { generateId, normalizeDisplayName, isValidUsername, isValidDisplayName } from "@/lib/utils";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
@@ -26,6 +26,15 @@ export async function POST(req: NextRequest) {
     if (!username?.trim() || !password) {
       return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
     }
+    if (!isValidUsername(username.trim())) {
+      return NextResponse.json({ error: "Username can only contain letters and numbers." }, { status: 400 });
+    }
+    if (displayName?.trim() && !isValidDisplayName(displayName.trim())) {
+      return NextResponse.json(
+        { error: "Display name can only contain letters, numbers, and spaces." },
+        { status: 400 }
+      );
+    }
     if (password.length < 8) {
       return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
     }
@@ -41,7 +50,7 @@ export async function POST(req: NextRequest) {
       id,
       username: normalizedUsername,
       passwordHash: await hashPassword(password),
-      displayName: displayName?.trim() || null,
+      displayName: normalizeDisplayName(displayName, normalizedUsername),
       isAdmin: false,
       isBootstrap: false,
       hasPaid: false,

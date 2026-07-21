@@ -42,3 +42,30 @@ export function ordinal(n: number): string {
 export function pluralize(count: number, word: string, plural?: string): string {
   return count === 1 ? `1 ${word}` : `${count} ${plural ?? word + "s"}`;
 }
+
+// Convert a name to Proper Case (trims and collapses internal spaces)
+export function toProperCase(name: string): string {
+  return name
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ""))
+    .join(" ");
+}
+
+// Every user gets a display name — falls back to (proper-cased) username if
+// left blank, and is always normalized to Proper Case either way.
+export function normalizeDisplayName(raw: string | null | undefined, username: string): string {
+  const trimmed = raw?.trim();
+  return toProperCase(trimmed || username);
+}
+
+// Letters and numbers only — no spaces, no punctuation, nothing else.
+export function isValidUsername(username: string): boolean {
+  return /^[a-zA-Z0-9]+$/.test(username);
+}
+
+// Letters, numbers, and spaces only — no punctuation or other symbols.
+export function isValidDisplayName(name: string): boolean {
+  return /^[a-zA-Z0-9 ]+$/.test(name);
+}

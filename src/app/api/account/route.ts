@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { auth } from "@/auth";
 import { hashPassword } from "@/lib/password";
+import { normalizeDisplayName, isValidDisplayName } from "@/lib/utils";
 import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +18,19 @@ export async function PATCH(req: NextRequest) {
       password?: string;
     };
 
+    if (displayName?.trim() && !isValidDisplayName(displayName.trim())) {
+      return NextResponse.json(
+        { error: "Display name can only contain letters, numbers, and spaces." },
+        { status: 400 }
+      );
+    }
+
     const updates: Partial<typeof users.$inferInsert> = {};
-    if (displayName !== undefined) updates.displayName = displayName.trim() || null;
+    if (displayName !== undefined) {
+      const user = await db.query.users.findFirst({ where: eq(users.id, session.user.id) });
+      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      updates.displayName = normalizeDisplayName(displayName, user.username);
+    }
     if (password) {
       if (password.length < 8) {
         return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
