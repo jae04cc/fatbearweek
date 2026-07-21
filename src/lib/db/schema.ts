@@ -9,6 +9,9 @@ export const bears = sqliteTable("bears", {
   id: text("id").primaryKey(),
   number: text("number").notNull().unique(),
   name: text("name").notNull(),
+  // Distinguishing physical characteristics (scars, ear tags, size, etc.)
+  identification: text("identification"),
+  // Life history / backstory — shown as "Biography" in the UI
   bio: text("bio"),
   photoBeforeUrl: text("photo_before_url"),
   photoAfterUrl: text("photo_after_url"),

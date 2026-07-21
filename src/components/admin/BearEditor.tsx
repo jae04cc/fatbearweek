@@ -7,10 +7,17 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Trash2, Upload } from "lucide-react";
 
-type Draft = Pick<Bear, "number" | "name" | "bio" | "isBye" | "sortOrder">;
+type Draft = Pick<Bear, "number" | "name" | "identification" | "bio" | "isBye" | "sortOrder">;
 
 function draftFromBear(bear: Bear): Draft {
-  return { number: bear.number, name: bear.name, bio: bear.bio, isBye: bear.isBye, sortOrder: bear.sortOrder };
+  return {
+    number: bear.number,
+    name: bear.name,
+    identification: bear.identification,
+    bio: bear.bio,
+    isBye: bear.isBye,
+    sortOrder: bear.sortOrder,
+  };
 }
 
 export function BearEditor() {
@@ -186,6 +193,14 @@ function BearRow({
     }
   };
 
+  const handlePaste = (slot: "before" | "after") => (e: React.ClipboardEvent) => {
+    const imageItem = Array.from(e.clipboardData.items).find((item) => item.type.startsWith("image/"));
+    if (!imageItem) return;
+    e.preventDefault();
+    const file = imageItem.getAsFile();
+    if (file) handleFile(slot, file);
+  };
+
   if (!draft) return null;
 
   return (
@@ -195,11 +210,31 @@ function BearRow({
           <Input value={draft.number} onChange={(e) => onChange({ number: e.target.value })} className="w-24" />
           <Input value={draft.name} onChange={(e) => onChange({ name: e.target.value })} className="flex-1" />
         </div>
-        <Input
-          placeholder="Short snippet / bio"
-          value={draft.bio ?? ""}
-          onChange={(e) => onChange({ bio: e.target.value })}
-        />
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Identification
+          </label>
+          <textarea
+            placeholder="Distinguishing features — scars, ear tags, size, coloring…"
+            value={draft.identification ?? ""}
+            onChange={(e) => onChange({ identification: e.target.value })}
+            rows={2}
+            className="w-full rounded-xl border border-white/10 bg-surface-elevated px-4 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Biography</label>
+          <textarea
+            placeholder="This bear's story…"
+            value={draft.bio ?? ""}
+            onChange={(e) => onChange({ bio: e.target.value })}
+            rows={3}
+            className="w-full rounded-xl border border-white/10 bg-surface-elevated px-4 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
+
         <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-sm text-neutral-300">
             <input type="checkbox" checked={draft.isBye} onChange={(e) => onChange({ isBye: e.target.checked })} />
@@ -224,6 +259,7 @@ function BearRow({
             inputRef={beforeInput}
             onPick={() => beforeInput.current?.click()}
             onFile={(f) => handleFile("before", f)}
+            onPaste={handlePaste("before")}
           />
           <PhotoUploadSlot
             label="After photo"
@@ -232,6 +268,7 @@ function BearRow({
             inputRef={afterInput}
             onPick={() => afterInput.current?.click()}
             onFile={(f) => handleFile("after", f)}
+            onPaste={handlePaste("after")}
           />
         </div>
         {uploadError && <p className="text-xs text-danger">{uploadError}</p>}
@@ -257,6 +294,7 @@ function PhotoUploadSlot({
   inputRef,
   onPick,
   onFile,
+  onPaste,
 }: {
   label: string;
   url: string | null;
@@ -264,13 +302,15 @@ function PhotoUploadSlot({
   inputRef: React.RefObject<HTMLInputElement>;
   onPick: () => void;
   onFile: (file: File | undefined) => void;
+  onPaste: (e: React.ClipboardEvent) => void;
 }) {
   return (
     <div className="flex-1">
       <button
         type="button"
         onClick={onPick}
-        className="relative aspect-square w-full overflow-hidden rounded-xl bg-surface-elevated flex items-center justify-center"
+        onPaste={onPaste}
+        className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface-elevated flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-accent"
       >
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -291,7 +331,7 @@ function PhotoUploadSlot({
         className="hidden"
         onChange={(e) => onFile(e.target.files?.[0])}
       />
-      <p className="mt-1 text-center text-xs text-neutral-500">{label}</p>
+      <p className="mt-1 text-center text-xs text-neutral-500">{label} — click, then paste (Ctrl+V) or choose a file</p>
     </div>
   );
 }

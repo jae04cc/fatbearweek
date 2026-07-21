@@ -11,9 +11,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   try {
     const body = await req.json();
-    const { number, name, bio, isBye, sortOrder } = body as {
+    const { number, name, identification, bio, isBye, sortOrder } = body as {
       number?: string;
       name?: string;
+      identification?: string | null;
       bio?: string | null;
       isBye?: boolean;
       sortOrder?: number;
@@ -22,6 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const updates: Partial<typeof bears.$inferInsert> = {};
     if (number !== undefined) updates.number = number.trim();
     if (name !== undefined) updates.name = name.trim();
+    if (identification !== undefined) updates.identification = identification?.trim() || null;
     if (bio !== undefined) updates.bio = bio?.trim() || null;
     if (isBye !== undefined) updates.isBye = isBye;
     if (sortOrder !== undefined) updates.sortOrder = sortOrder;

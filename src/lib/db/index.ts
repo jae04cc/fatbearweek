@@ -34,6 +34,7 @@ export async function runMigrations() {
       id TEXT PRIMARY KEY,
       number TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
+      identification TEXT,
       bio TEXT,
       photo_before_url TEXT,
       photo_after_url TEXT,
@@ -93,6 +94,12 @@ export async function runMigrations() {
   // Backfill: the literal "admin" bootstrap account predates this flag on
   // any database created before this migration — flag it retroactively.
   await client.execute("UPDATE users SET is_bootstrap = 1 WHERE username = 'admin' AND is_bootstrap = 0");
+
+  // Additive column migration for databases created before identification existed
+  const bearCols = await client.execute("PRAGMA table_info(bears)");
+  if (!bearCols.rows.some((r) => r[1] === "identification")) {
+    await client.execute("ALTER TABLE bears ADD COLUMN identification TEXT");
+  }
 }
 
 // Called once at server startup, after runMigrations(). If no users exist yet,
