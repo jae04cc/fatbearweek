@@ -4,6 +4,14 @@
 
 html {
   background-color: #0d1410;
+  /* Hide the page's own scrollbar everywhere — still fully scrollable via
+     touch/wheel/drag, just no visible bar (matches .no-scrollbar below,
+     applied globally here since this is the outer page scroll itself). */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {
