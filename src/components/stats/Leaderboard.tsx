@@ -37,8 +37,12 @@ export function Leaderboard({
                 // No active:/tap-highlight state here on purpose — on mobile,
                 // :active fires on touchstart and can stay visibly applied
                 // while a finger drags past a row mid-scroll, flashing rows
-                // that were never actually tapped.
-                locked && "hover:bg-white/5 cursor-pointer",
+                // that were never actually tapped. The hover state is also
+                // gated to real hover-capable pointers (a mouse) — plain
+                // `hover:` still matches on touchend in iOS Safari and stays
+                // visually "stuck" on a row until something else is tapped,
+                // which looks identical to the :active bug it's paired with.
+                locked && "[@media(hover:hover)]:hover:bg-white/5 cursor-pointer",
                 !locked && "cursor-default"
               )}
             >

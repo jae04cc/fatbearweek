@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { BracketGrid } from "@/components/bracket/BracketGrid";
 import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
@@ -13,6 +13,47 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
   const [error, setError] = useState<string | null>(null);
   const [viewingBear, setViewingBear] = useState<Bear | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
+  const gridWrapperRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [wrapperWidth, setWrapperWidth] = useState<number | null>(null);
+
+  // The bracket is a fixed, fairly tall grid — someone's full bracket often
+  // doesn't fit under the header within 90vh. Rather than let it scroll
+  // vertically (confusing alongside the grid's own horizontal scroll), scale
+  // the whole thing down uniformly so it always fits top-to-bottom, leaving
+  // only the intentional left/right scroll for the columns themselves.
+  //
+  // A plain `transform: scale()` isn't enough on its own: the wrapper's own
+  // (pre-scale) width still defaults to the viewing area's width, so once
+  // shrunk it only fills the top-left corner, leaving the rest of the area
+  // blank instead of using the extra room. Explicitly widening the wrapper
+  // to `available / scale` means it renders back at exactly the viewing
+  // area's full width after the shrink — and BracketGrid's OWN internal
+  // horizontal scroll (its `<main>` always fills 100% of this wrapper) then
+  // has that same full width to work with, so anything still too wide to
+  // fit is reached by scrolling, never by shrinking further.
+  useLayoutEffect(() => {
+    if (loading || error) return;
+    const area = areaRef.current;
+    const wrapper = gridWrapperRef.current;
+    if (!area || !wrapper) return;
+
+    const recomputeScale = () => {
+      wrapper.style.transform = "none";
+      wrapper.style.width = "auto";
+      const availableHeight = area.clientHeight;
+      const availableWidth = area.clientWidth;
+      const naturalHeight = wrapper.scrollHeight;
+      const nextScale = availableHeight > 0 && naturalHeight > 0 ? Math.min(1, availableHeight / naturalHeight) : 1;
+      setScale(nextScale);
+      setWrapperWidth(nextScale > 0 ? availableWidth / nextScale : availableWidth);
+    };
+
+    recomputeScale();
+    window.addEventListener("resize", recomputeScale);
+    return () => window.removeEventListener("resize", recomputeScale);
+  }, [loading, error, matchups, picks]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -67,14 +108,25 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
         ) : error ? (
           <p className="px-5 py-10 text-center text-sm text-danger">{error}</p>
         ) : (
-          <BracketGrid
-            matchups={matchups}
-            bearsById={bearsById}
-            picks={picks}
-            disabled
-            onPick={() => {}}
-            onSelectBear={setViewingBear}
-          />
+          <div ref={areaRef} className="min-h-0 flex-1 overflow-y-hidden">
+            <div
+              ref={gridWrapperRef}
+              style={{
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+                width: wrapperWidth !== null ? `${wrapperWidth}px` : undefined,
+              }}
+            >
+              <BracketGrid
+                matchups={matchups}
+                bearsById={bearsById}
+                picks={picks}
+                disabled
+                onPick={() => {}}
+                onSelectBear={setViewingBear}
+              />
+            </div>
+          </div>
         )}
       </div>
 

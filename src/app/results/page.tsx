@@ -59,7 +59,7 @@ export default function ResultsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 px-5 text-xs font-bold uppercase tracking-widest text-neutral-500">Tournament bracket</h2>
+          <h2 className="mb-3 px-5 text-xs font-bold uppercase tracking-widest text-neutral-500">Tournament results</h2>
           <ResultsBracket matchups={matchups} bearsById={bearsById} pickStats={pickStats} onSelectBear={setViewingBear} />
         </section>
       </main>
