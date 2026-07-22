@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ImageLightbox } from "@/components/ui/ImageLightbox";
 import { cn } from "@/lib/utils";
 
-export function BearCard({ bear }: { bear: Bear }) {
+export function BearCard({ bear, fullBio = false }: { bear: Bear; fullBio?: boolean }) {
   const [zoomed, setZoomed] = useState<{ src: string; alt: string } | null>(null);
 
   return (
@@ -23,7 +23,7 @@ export function BearCard({ bear }: { bear: Bear }) {
           onZoom={() => bear.photoAfterUrl && setZoomed({ src: bear.photoAfterUrl, alt: `${bear.name} — after` })}
         />
       </div>
-      <CardBody className="gap-2">
+      <CardBody className="gap-4">
         <div className="flex items-center gap-2">
           <span className="font-bold text-lg text-neutral-50">{bear.name}</span>
           <Badge variant="accent">#{bear.number}</Badge>
@@ -31,14 +31,18 @@ export function BearCard({ bear }: { bear: Bear }) {
         </div>
         {bear.identification && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Identification</p>
-            <p className="text-sm text-neutral-400">{bear.identification}</p>
+            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Identification</p>
+            <p className="whitespace-pre-line text-sm text-neutral-400">{bear.identification}</p>
           </div>
         )}
         {bear.bio && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Biography</p>
-            <ExpandableText text={bear.bio} />
+            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Biography</p>
+            {fullBio ? (
+              <p className="whitespace-pre-line text-sm text-neutral-400">{bear.bio}</p>
+            ) : (
+              <ExpandableText text={bear.bio} />
+            )}
           </div>
         )}
       </CardBody>
@@ -60,7 +64,7 @@ function ExpandableText({ text }: { text: string }) {
 
   return (
     <div>
-      <p ref={ref} className={cn("text-sm text-neutral-400", !expanded && "line-clamp-3")}>
+      <p ref={ref} className={cn("whitespace-pre-line text-sm text-neutral-400", !expanded && "line-clamp-3")}>
         {text}
       </p>
       {needsToggle && (

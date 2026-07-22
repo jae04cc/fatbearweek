@@ -86,7 +86,6 @@ export default function BracketPage() {
     <div className="flex flex-col">
       <header className="relative px-5 pt-10 pb-4">
         <h1 className="text-2xl font-black text-neutral-50">My Bracket</h1>
-        <p className="mt-0.5 text-xs text-neutral-500 sm:hidden">Scroll sideways to see the full bracket →</p>
         {bracketLocked && (
           <button
             type="button"

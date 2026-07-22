@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { MatchupCard } from "@/components/matchups/MatchupCard";
+import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 import { Button } from "@/components/ui/Button";
 
 const ROUND_LABELS: Record<number, string> = {
@@ -24,6 +25,7 @@ export default function MatchupsPage() {
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewingBear, setViewingBear] = useState<Bear | null>(null);
 
   const load = useCallback(() => {
     Promise.all([fetch("/api/bears").then((r) => r.json()), fetch("/api/matchups").then((r) => r.json())]).then(
@@ -140,6 +142,7 @@ export default function MatchupsPage() {
               marking={markingId === m.id}
               onMarkWinner={(bearId) => handleMarkWinner(m.id, bearId)}
               onUnmarkWinner={() => handleUnmarkWinner(m.id)}
+              onSelectBear={setViewingBear}
             />
           ))
         )}
@@ -157,6 +160,8 @@ export default function MatchupsPage() {
           </Button>
         )}
       </main>
+
+      {viewingBear && <BearProfilePopup bear={viewingBear} onClose={() => setViewingBear(null)} />}
     </div>
   );
 }

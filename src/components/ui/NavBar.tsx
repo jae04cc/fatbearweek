@@ -10,7 +10,7 @@ const LINKS = [
   { href: "/bears", label: "Bears", icon: PawPrint },
   { href: "/bracket", label: "Bracket", icon: Trophy },
   { href: "/matchups", label: "Matchups", icon: ListChecks },
-  { href: "/stats", label: "Stats", icon: BarChart3 },
+  { href: "/results", label: "Results", icon: BarChart3 },
 ];
 
 export function NavBar() {

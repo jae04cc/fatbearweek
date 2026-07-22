@@ -14,10 +14,21 @@ interface Props {
   isAdmin: boolean;
   onMarkWinner: (bearId: string) => void;
   onUnmarkWinner: () => void;
+  onSelectBear: (bear: Bear) => void;
   marking: boolean;
 }
 
-export function MatchupCard({ matchup, bearA, bearB, pickCounts, isAdmin, onMarkWinner, onUnmarkWinner, marking }: Props) {
+export function MatchupCard({
+  matchup,
+  bearA,
+  bearB,
+  pickCounts,
+  isAdmin,
+  onMarkWinner,
+  onUnmarkWinner,
+  onSelectBear,
+  marking,
+}: Props) {
   if (!bearA || !bearB) {
     return (
       <Card>
@@ -44,14 +55,26 @@ export function MatchupCard({ matchup, bearA, bearB, pickCounts, isAdmin, onMark
                   isWinner ? "border-success bg-success/10" : "border-white/10 bg-surface-elevated"
                 )}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onSelectBear(bear)}
+                  className="flex w-full items-center justify-between gap-2 text-left"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    {bear.photoAfterUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={bear.photoAfterUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/30 text-base">
+                        🐻
+                      </span>
+                    )}
                     {isWinner && <Trophy size={14} className="text-success shrink-0" />}
-                    <span className="font-semibold text-neutral-100">{bear.name}</span>
+                    <span className="truncate font-semibold text-neutral-100">{bear.name}</span>
                     <Badge variant="accent">#{bear.number}</Badge>
                   </div>
                   <span className="text-xs text-neutral-500 shrink-0">{pct}% picked</span>
-                </div>
+                </button>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/30">
                   <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
                 </div>

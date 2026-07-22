@@ -3,18 +3,11 @@ import { useEffect, useState } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import type { LeaderboardEntry } from "@/lib/bracket/scoring";
 import { Leaderboard } from "@/components/stats/Leaderboard";
-import { PickPercentageBar } from "@/components/stats/PickPercentageBar";
 import { BracketPopup } from "@/components/stats/BracketPopup";
-import { Card, CardBody } from "@/components/ui/Card";
+import { ResultsBracket } from "@/components/results/ResultsBracket";
+import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 
-const ROUND_LABELS: Record<number, string> = {
-  1: "Round 1",
-  2: "Round 2",
-  3: "Final Four",
-  4: "Championship",
-};
-
-export default function StatsPage() {
+export default function ResultsPage() {
   const [bears, setBears] = useState<Bear[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
@@ -22,6 +15,7 @@ export default function StatsPage() {
   const [bracketLocked, setBracketLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [viewingBear, setViewingBear] = useState<Bear | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -49,18 +43,14 @@ export default function StatsPage() {
     );
   }
 
-  const byRound = [1, 2, 3, 4].map((round) =>
-    matchups.filter((m) => m.round === round && m.bearAId && m.bearBId)
-  );
-
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-5 pt-10 pb-6">
-        <h1 className="text-2xl font-black text-neutral-50">Stats</h1>
+        <h1 className="text-2xl font-black text-neutral-50">Results</h1>
       </header>
 
-      <main className="flex-1 px-5 pb-10 space-y-8">
-        <section>
+      <main className="flex-1 pb-10 space-y-8">
+        <section className="px-5">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">Leaderboard</h2>
           {!bracketLocked && (
             <p className="mb-2 text-xs text-neutral-500">Brackets stay secret until the pool is locked.</p>
@@ -69,37 +59,13 @@ export default function StatsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">Pick breakdown</h2>
-          <div className="space-y-4">
-            {byRound.map((roundMatchups, idx) =>
-              roundMatchups.length === 0 ? null : (
-                <div key={idx}>
-                  <p className="mb-2 text-sm font-semibold text-neutral-300">{ROUND_LABELS[idx + 1]}</p>
-                  <div className="space-y-3">
-                    {roundMatchups.map((m) => {
-                      const counts = pickStats[m.id] ?? {};
-                      const total = Object.values(counts).reduce((a, b) => a + b, 0);
-                      const bearA = m.bearAId ? bearsById.get(m.bearAId) : undefined;
-                      const bearB = m.bearBId ? bearsById.get(m.bearBId) : undefined;
-                      if (!bearA || !bearB) return null;
-                      return (
-                        <Card key={m.id}>
-                          <CardBody className="gap-3">
-                            <PickPercentageBar bear={bearA} pct={total > 0 ? Math.round(((counts[bearA.id] ?? 0) / total) * 100) : 0} />
-                            <PickPercentageBar bear={bearB} pct={total > 0 ? Math.round(((counts[bearB.id] ?? 0) / total) * 100) : 0} />
-                          </CardBody>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              )
-            )}
-          </div>
+          <h2 className="mb-3 px-5 text-xs font-bold uppercase tracking-widest text-neutral-500">Tournament bracket</h2>
+          <ResultsBracket matchups={matchups} bearsById={bearsById} pickStats={pickStats} onSelectBear={setViewingBear} />
         </section>
       </main>
 
       {viewingUserId && <BracketPopup userId={viewingUserId} bears={bears} onClose={() => setViewingUserId(null)} />}
+      {viewingBear && <BearProfilePopup bear={viewingBear} onClose={() => setViewingBear(null)} />}
     </div>
   );
 }

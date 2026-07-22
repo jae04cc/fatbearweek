@@ -108,7 +108,7 @@ function MergeConnector({ feederOffsetPx = 0 }: { feederOffsetPx?: number }) {
 
 // Columns: 1=Round1, 2=gutter (Round1→Round2 connector),
 // 3=Round2, 4=gutter (→Final Four), 5=Final Four, 6=gutter (→Championship), 7=Championship
-const GRID_TEMPLATE_COLUMNS = "220px 28px 220px 28px 220px 28px 220px";
+const GRID_TEMPLATE_COLUMNS = "280px 28px 280px 28px 280px 28px 280px";
 const GRID_TEMPLATE_ROWS = "auto repeat(4, minmax(128px, auto))";
 
 export function BracketGrid({
