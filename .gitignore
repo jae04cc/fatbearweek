@@ -15,6 +15,9 @@
 *.db-shm
 *.db-wal
 
+# local backups (prod snapshots, etc.)
+/backups/
+
 # typescript
 *.tsbuildinfo
 

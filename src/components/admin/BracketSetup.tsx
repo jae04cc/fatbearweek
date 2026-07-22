@@ -20,6 +20,7 @@ export function BracketSetup() {
   ]);
   const [round2Byes, setRound2Byes] = useState<string[]>(["", "", "", ""]);
   const [seeding, setSeeding] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
   useEffect(() => {
@@ -73,6 +74,33 @@ export function BracketSetup() {
     }
   };
 
+  const handleReset = async () => {
+    setMessage(null);
+    if (
+      !confirm(
+        "Reset for a new season? This permanently deletes every bear (and their photos), the whole bracket, and everyone's picks. This cannot be undone."
+      )
+    ) {
+      return;
+    }
+    setResetting(true);
+    try {
+      const res = await fetch("/api/admin/bracket/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: true }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to reset");
+      setBears([]);
+      setMessage({ type: "success", text: `Reset complete — ${body.bearsDeleted} bears and the bracket were removed.` });
+    } catch (e) {
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to reset" });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -83,12 +111,18 @@ export function BracketSetup() {
 
   if (!ready) {
     return (
-      <Card>
-        <CardBody className="text-sm text-neutral-400">
-          Add all 12 bears first (8 regular + 4 with a bye) in the Bears tab before setting up the bracket. Currently:{" "}
-          {nonByeBears.length}/8 regular, {byeBears.length}/4 byes.
-        </CardBody>
-      </Card>
+      <div className="space-y-4">
+        <Card>
+          <CardBody className="text-sm text-neutral-400">
+            Add all 12 bears first (8 regular + 4 with a bye) in the Bears tab before setting up the bracket.
+            Currently: {nonByeBears.length}/8 regular, {byeBears.length}/4 byes.
+          </CardBody>
+        </Card>
+        {bears.length > 0 && (
+          <ResetSeasonPanel resetting={resetting} onReset={handleReset} />
+        )}
+        {message && <StatusMessage message={message} />}
+      </div>
     );
   }
 
@@ -145,15 +179,38 @@ export function BracketSetup() {
         </Button>
       </div>
 
-      {message && (
-        <div
-          className={`rounded-xl border px-4 py-3 text-sm ${
-            message.type === "error" ? "border-danger/30 bg-danger/10 text-danger" : "border-success/30 bg-success/10 text-success"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
+      {message && <StatusMessage message={message} />}
+
+      <ResetSeasonPanel resetting={resetting} onReset={handleReset} />
+    </div>
+  );
+}
+
+function ResetSeasonPanel({ resetting, onReset }: { resetting: boolean; onReset: () => void }) {
+  return (
+    <Card className="border-danger/30">
+      <CardBody className="gap-2">
+        <p className="font-semibold text-danger">Danger zone</p>
+        <p className="text-sm text-neutral-400">
+          Starting a new season? This permanently deletes every bear (and their photos), the whole bracket, and
+          everyone's picks — nothing else is touched.
+        </p>
+        <Button size="sm" variant="danger" onClick={onReset} loading={resetting} className="self-start">
+          Reset for a new season
+        </Button>
+      </CardBody>
+    </Card>
+  );
+}
+
+function StatusMessage({ message }: { message: { type: "error" | "success"; text: string } }) {
+  return (
+    <div
+      className={`rounded-xl border px-4 py-3 text-sm ${
+        message.type === "error" ? "border-danger/30 bg-danger/10 text-danger" : "border-success/30 bg-success/10 text-success"
+      }`}
+    >
+      {message.text}
     </div>
   );
 }
