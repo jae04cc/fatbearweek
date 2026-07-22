@@ -1,20 +1,30 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import type { Bear } from "@/lib/db/schema";
 import { BearCard } from "@/components/bears/BearCard";
 
 export default function BearsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user.isAdmin ?? false;
   const [bears, setBears] = useState<Bear[]>([]);
+  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/bears")
-      .then((r) => r.json())
-      .then((data) => {
-        setBears(Array.isArray(data) ? data : []);
+    Promise.all([fetch("/api/bears").then((r) => r.json()), fetch("/api/config").then((r) => r.json())]).then(
+      ([bearsData, configData]) => {
+        setBears(Array.isArray(bearsData) ? bearsData : []);
+        setRevealedToPlayers(configData.revealedToPlayers ?? false);
         setLoading(false);
-      });
+      }
+    );
   }, []);
+
+  // Bears get added one at a time while setting up for the season — admins
+  // can watch that happen, but players see a placeholder until the roster
+  // is revealed, so nobody sees the roster trickle in mid-setup.
+  const hiddenFromPlayer = !isAdmin && !revealedToPlayers;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -28,6 +38,8 @@ export default function BearsPage() {
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent border-t-transparent" />
           </div>
+        ) : hiddenFromPlayer ? (
+          <p className="text-center text-neutral-500 py-20">Bears haven't been added yet.</p>
         ) : bears.length === 0 ? (
           <p className="text-center text-neutral-500 py-20">No bears added yet.</p>
         ) : (

@@ -16,6 +16,7 @@ export default function BracketPage() {
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [bracketLocked, setBracketLocked] = useState(false);
+  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -30,18 +31,25 @@ export default function BracketPage() {
   }, [session, router]);
 
   useEffect(() => {
-    Promise.all([fetch("/api/bears").then((r) => r.json()), fetch("/api/bracket").then((r) => r.json())]).then(
-      ([bearsData, bracketData]) => {
-        setBears(Array.isArray(bearsData) ? bearsData : []);
-        setMatchups(bracketData.matchups ?? []);
-        setPicks(bracketData.picks ?? {});
-        setBracketLocked(bracketData.bracketLocked ?? false);
-        setLoading(false);
-      }
-    );
+    Promise.all([
+      fetch("/api/bears").then((r) => r.json()),
+      fetch("/api/bracket").then((r) => r.json()),
+      fetch("/api/config").then((r) => r.json()),
+    ]).then(([bearsData, bracketData, configData]) => {
+      setBears(Array.isArray(bearsData) ? bearsData : []);
+      setMatchups(bracketData.matchups ?? []);
+      setPicks(bracketData.picks ?? {});
+      setBracketLocked(bracketData.bracketLocked ?? false);
+      setRevealedToPlayers(configData.revealedToPlayers ?? false);
+      setLoading(false);
+    });
   }, []);
 
   const bearsById = new Map(bears.map((b) => [b.id, b]));
+  const isAdmin = session?.user.isAdmin ?? false;
+  // Nothing to show if the bracket isn't seeded yet, or if it is but the
+  // admin hasn't revealed it to players yet (admins can still preview it).
+  const notReady = matchups.length === 0 || (!isAdmin && !revealedToPlayers);
 
   const pickBear = useCallback(
     (matchupId: string, bearId: string) => {
@@ -88,7 +96,7 @@ export default function BracketPage() {
     <div className="flex flex-col">
       <header className="relative px-5 pt-10 pb-4 text-center">
         <h1 className="text-2xl font-black text-neutral-50">My Bracket</h1>
-        {bracketLocked && (
+        {!notReady && bracketLocked && (
           <button
             type="button"
             onClick={() => setShowLockNotice((v) => !v)}
@@ -98,34 +106,40 @@ export default function BracketPage() {
             <Lock size={16} />
           </button>
         )}
-        {bracketLocked && showLockNotice && (
+        {!notReady && bracketLocked && showLockNotice && (
           <div className="absolute right-5 top-20 z-20 w-56 rounded-xl border border-warning/30 bg-surface-elevated px-3 py-2.5 text-xs text-warning shadow-xl">
             The bracket is locked — picks can no longer be changed.
           </div>
         )}
       </header>
 
-      <div className="pb-24">
-        <BracketGrid
-          matchups={matchups}
-          bearsById={bearsById}
-          picks={picks}
-          disabled={bracketLocked}
-          onPick={pickBear}
-          onSelectBear={setViewingBear}
-        />
-        {error && <p className="px-5 pt-4 text-sm text-danger">{error}</p>}
-      </div>
+      {notReady ? (
+        <p className="px-5 py-20 text-center text-neutral-500">The bracket hasn't been seeded yet.</p>
+      ) : (
+        <>
+          <div className="pb-24">
+            <BracketGrid
+              matchups={matchups}
+              bearsById={bearsById}
+              picks={picks}
+              disabled={bracketLocked}
+              onPick={pickBear}
+              onSelectBear={setViewingBear}
+            />
+            {error && <p className="px-5 pt-4 text-sm text-danger">{error}</p>}
+          </div>
 
-      {!bracketLocked && (
-        <div className="fixed bottom-20 right-5 sm:bottom-6 sm:right-6 z-30 flex gap-2">
-          <Button variant="secondary" onClick={handleClear} className="shadow-xl shadow-black/40">
-            Clear
-          </Button>
-          <Button onClick={handleSave} loading={saving} className="shadow-xl shadow-black/40">
-            {saved ? "Saved!" : "Save"}
-          </Button>
-        </div>
+          {!bracketLocked && (
+            <div className="fixed bottom-20 right-5 sm:bottom-6 sm:right-6 z-30 flex gap-2">
+              <Button variant="secondary" onClick={handleClear} className="shadow-xl shadow-black/40">
+                Clear
+              </Button>
+              <Button onClick={handleSave} loading={saving} className="shadow-xl shadow-black/40">
+                {saved ? "Saved!" : "Save"}
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
       {viewingBear && <BearProfilePopup bear={viewingBear} onClose={() => setViewingBear(null)} />}

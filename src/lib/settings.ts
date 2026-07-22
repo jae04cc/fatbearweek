@@ -18,6 +18,16 @@ export async function isBracketLocked(): Promise<boolean> {
   return (await getSetting("bracket_locked")) === "true";
 }
 
+// Gates whether non-admin players can see the bears roster, the bracket
+// fill-out page, and the results bracket — lets bears/matchups get set up
+// gradually (added one at a time, seeded once complete) without players
+// seeing things trickle in mid-setup. Admins always see the real content
+// regardless, so they can review as they go. Defaults to hidden (false) so
+// a freshly reset/deployed instance starts hidden until explicitly revealed.
+export async function isRevealedToPlayers(): Promise<boolean> {
+  return (await getSetting("reveal_to_players")) === "true";
+}
+
 export async function getCurrentRound(): Promise<number> {
   const value = await getSetting("current_round");
   const parsed = value ? parseInt(value, 10) : 1;

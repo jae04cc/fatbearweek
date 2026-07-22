@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import type { LeaderboardEntry } from "@/lib/bracket/scoring";
 import { Leaderboard } from "@/components/stats/Leaderboard";
@@ -8,11 +9,14 @@ import { ResultsBracket } from "@/components/results/ResultsBracket";
 import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 
 export default function ResultsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user.isAdmin ?? false;
   const [bears, setBears] = useState<Bear[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [bracketLocked, setBracketLocked] = useState(false);
+  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [viewingBear, setViewingBear] = useState<Bear | null>(null);
@@ -29,11 +33,15 @@ export default function ResultsPage() {
       setPickStats(picksData.pickStats ?? {});
       setLeaderboard(leaderboardData.leaderboard ?? []);
       setBracketLocked(configData.bracketLocked ?? false);
+      setRevealedToPlayers(configData.revealedToPlayers ?? false);
       setLoading(false);
     });
   }, []);
 
   const bearsById = new Map(bears.map((b) => [b.id, b]));
+  // Straight-up hidden (not a placeholder) until the admin reveals it, or
+  // there's simply nothing seeded yet — admins can still preview it.
+  const showBracket = matchups.length > 0 && (isAdmin || revealedToPlayers);
 
   if (loading) {
     return (
@@ -58,10 +66,12 @@ export default function ResultsPage() {
           <Leaderboard entries={leaderboard} locked={bracketLocked} onSelectUser={setViewingUserId} />
         </section>
 
-        <section>
-          <h2 className="mb-3 px-5 text-xs font-bold uppercase tracking-widest text-neutral-500">Tournament results</h2>
-          <ResultsBracket matchups={matchups} bearsById={bearsById} pickStats={pickStats} onSelectBear={setViewingBear} />
-        </section>
+        {showBracket && (
+          <section>
+            <h2 className="mb-3 px-5 text-xs font-bold uppercase tracking-widest text-neutral-500">Tournament results</h2>
+            <ResultsBracket matchups={matchups} bearsById={bearsById} pickStats={pickStats} onSelectBear={setViewingBear} />
+          </section>
+        )}
       </main>
 
       {viewingUserId && <BracketPopup userId={viewingUserId} bears={bears} onClose={() => setViewingUserId(null)} />}

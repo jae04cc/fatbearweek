@@ -21,6 +21,7 @@ export default function MatchupsPage() {
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
   const [currentRound, setCurrentRound] = useState(1);
+  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [advancing, setAdvancing] = useState(false);
@@ -28,15 +29,18 @@ export default function MatchupsPage() {
   const [viewingBear, setViewingBear] = useState<Bear | null>(null);
 
   const load = useCallback(() => {
-    Promise.all([fetch("/api/bears").then((r) => r.json()), fetch("/api/matchups").then((r) => r.json())]).then(
-      ([bearsData, matchupData]) => {
-        setBears(Array.isArray(bearsData) ? bearsData : []);
-        setMatchups(matchupData.matchups ?? []);
-        setPickStats(matchupData.pickStats ?? {});
-        setCurrentRound(matchupData.currentRound ?? 1);
-        setLoading(false);
-      }
-    );
+    Promise.all([
+      fetch("/api/bears").then((r) => r.json()),
+      fetch("/api/matchups").then((r) => r.json()),
+      fetch("/api/config").then((r) => r.json()),
+    ]).then(([bearsData, matchupData, configData]) => {
+      setBears(Array.isArray(bearsData) ? bearsData : []);
+      setMatchups(matchupData.matchups ?? []);
+      setPickStats(matchupData.pickStats ?? {});
+      setCurrentRound(matchupData.currentRound ?? 1);
+      setRevealedToPlayers(configData.revealedToPlayers ?? false);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(load, [load]);
@@ -109,6 +113,9 @@ export default function MatchupsPage() {
   };
 
   const allDecided = matchups.length > 0 && matchups.every((m) => m.winnerBearId);
+  // Nothing to show if the bracket isn't seeded yet, or if it is but the
+  // admin hasn't revealed it to players yet (admins can still see it).
+  const notReady = matchups.length === 0 || (!isAdmin && !revealedToPlayers);
 
   if (loading) {
     return (
@@ -126,9 +133,9 @@ export default function MatchupsPage() {
       </header>
 
       <main className="flex-1 px-5 pb-10 space-y-3">
-        {matchups.length === 0 ? (
+        {notReady ? (
           <p className="text-center text-neutral-500 py-20">
-            The bracket hasn't been seeded yet{isAdmin ? " — head to Admin → Setup to set it up." : "."}
+            The bracket hasn't been seeded yet{isAdmin && matchups.length === 0 ? " — head to Admin → Setup to set it up." : "."}
           </p>
         ) : (
           matchups.map((m) => (
