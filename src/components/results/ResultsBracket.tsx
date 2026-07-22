@@ -249,6 +249,11 @@ export function ResultsBracket({
             </div>
           ))}
         </div>
+        {/* An explicit trailing spacer, not padding on the scroll
+            container — padding at the far edge of horizontally scrolled
+            content is unreliable across browsers, but a real element
+            always counts toward the scrollable width. */}
+        <div className="w-5 shrink-0" aria-hidden="true" />
       </div>
     </main>
   );
