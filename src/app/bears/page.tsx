@@ -18,7 +18,7 @@ export default function BearsPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-5 pt-10 pb-6">
+      <header className="px-5 pt-10 pb-6 text-center">
         <h1 className="text-2xl font-black text-neutral-50">The Bears</h1>
         <p className="text-sm text-neutral-400 mt-0.5">This year's contestants</p>
       </header>

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { BracketGrid } from "@/components/bracket/BracketGrid";
+import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 import { X } from "lucide-react";
 
 export function BracketPopup({ userId, bears, onClose }: { userId: string; bears: Bear[]; onClose: () => void }) {
@@ -10,6 +11,7 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewingBear, setViewingBear] = useState<Bear | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,9 +67,18 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
         ) : error ? (
           <p className="px-5 py-10 text-center text-sm text-danger">{error}</p>
         ) : (
-          <BracketGrid matchups={matchups} bearsById={bearsById} picks={picks} disabled onPick={() => {}} />
+          <BracketGrid
+            matchups={matchups}
+            bearsById={bearsById}
+            picks={picks}
+            disabled
+            onPick={() => {}}
+            onSelectBear={setViewingBear}
+          />
         )}
       </div>
+
+      {viewingBear && <BearProfilePopup bear={viewingBear} onClose={() => setViewingBear(null)} />}
     </div>
   );
 }

@@ -24,6 +24,7 @@ export function BracketMatchBox({
   picked,
   disabled,
   onPick,
+  onSelectBear,
   matchResult,
 }: {
   bearA?: Bear;
@@ -31,6 +32,7 @@ export function BracketMatchBox({
   picked?: string;
   disabled: boolean;
   onPick: (bearId: string) => void;
+  onSelectBear: (bear: Bear) => void;
   matchResult?: MatchResult;
 }) {
   const pickStatus = matchResult?.pickStatus ?? "pending";
@@ -55,6 +57,7 @@ export function BracketMatchBox({
         pickStatus={pickStatus}
         disabled={disabled || aFinalBusted}
         onPick={onPick}
+        onSelectBear={onSelectBear}
       />
       <BearSlot
         bear={bearB}
@@ -63,6 +66,7 @@ export function BracketMatchBox({
         pickStatus={pickStatus}
         disabled={disabled || bFinalBusted}
         onPick={onPick}
+        onSelectBear={onSelectBear}
       />
     </div>
   );
@@ -75,6 +79,7 @@ function BearSlot({
   pickStatus,
   disabled,
   onPick,
+  onSelectBear,
 }: {
   bear?: Bear;
   isPicked: boolean;
@@ -82,6 +87,7 @@ function BearSlot({
   pickStatus: ResultStatus;
   disabled: boolean;
   onPick: (bearId: string) => void;
+  onSelectBear: (bear: Bear) => void;
 }) {
   if (!bear) {
     return (
@@ -102,25 +108,46 @@ function BearSlot({
       : "border-transparent bg-surface-elevated";
 
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={() => onPick(bear.id)}
+    // A plain div, not a <button> — the photo below is its own real button
+    // (tap it to view the bear's profile mid-pick) and buttons can't nest,
+    // so picking is handled here instead via onClick/onKeyDown.
+    <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-disabled={disabled}
+      onClick={() => !disabled && onPick(bear.id)}
+      onKeyDown={(e) => {
+        if (!disabled && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onPick(bear.id);
+        }
+      }}
       className={cn(
-        "flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed",
+        "flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-colors",
+        disabled ? "cursor-not-allowed" : "cursor-pointer",
         style
       )}
     >
-      {bear.photoAfterUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={bear.photoAfterUrl} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
-      ) : (
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/30 text-sm">🐻</span>
-      )}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelectBear(bear);
+        }}
+        className="shrink-0"
+        aria-label={`View ${bear.name}'s profile`}
+      >
+        {bear.photoAfterUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={bear.photoAfterUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
+        ) : (
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-sm">🐻</span>
+        )}
+      </button>
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-100">{bear.name}</span>
       <span className="ml-auto shrink-0 rounded-full bg-black/30 px-2 py-0.5 text-xs font-mono text-neutral-300">
         {bear.number}
       </span>
-    </button>
+    </div>
   );
 }

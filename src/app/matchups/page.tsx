@@ -120,7 +120,7 @@ export default function MatchupsPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-5 pt-10 pb-6">
+      <header className="px-5 pt-10 pb-6 text-center">
         <h1 className="text-2xl font-black text-neutral-50">Round Matchups</h1>
         <p className="text-sm text-neutral-400 mt-0.5">{ROUND_LABELS[currentRound] ?? `Round ${currentRound}`}</p>
       </header>

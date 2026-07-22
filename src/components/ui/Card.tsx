@@ -7,7 +7,11 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Card({ className, elevated, ...props }: CardProps) {
   return (
     <div
-      className={cn("rounded-2xl", elevated ? "bg-surface-elevated/70" : "bg-surface-card/70", className)}
+      className={cn(
+        "rounded-2xl border border-white/10",
+        elevated ? "bg-surface-elevated/70" : "bg-surface-card/70",
+        className
+      )}
       {...props}
     />
   );

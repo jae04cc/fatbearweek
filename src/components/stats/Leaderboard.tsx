@@ -22,7 +22,7 @@ export function Leaderboard({
 
   return (
     <Card>
-      <CardBody className="gap-1 divide-y divide-white/10 p-0">
+      <CardBody className="gap-1 p-0">
         {entries.map((entry, idx) => {
           const pointsPct = (entry.points / maxPossibleOverall) * 100;
           const remainingPct = (entry.maxRemaining / maxPossibleOverall) * 100;
@@ -33,8 +33,12 @@ export function Leaderboard({
               disabled={!locked}
               onClick={() => onSelectUser(entry.userId)}
               className={cn(
-                "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-                locked && "hover:bg-white/5 active:bg-white/10 cursor-pointer",
+                "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors [-webkit-tap-highlight-color:transparent]",
+                // No active:/tap-highlight state here on purpose — on mobile,
+                // :active fires on touchstart and can stay visibly applied
+                // while a finger drags past a row mid-scroll, flashing rows
+                // that were never actually tapped.
+                locked && "hover:bg-white/5 cursor-pointer",
                 !locked && "cursor-default"
               )}
             >

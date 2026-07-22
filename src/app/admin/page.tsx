@@ -24,7 +24,7 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-5 pt-10 pb-4">
+      <header className="px-5 pt-10 pb-4 text-center">
         <h1 className="text-2xl font-black text-neutral-50">Admin</h1>
       </header>
 

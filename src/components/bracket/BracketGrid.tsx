@@ -117,12 +117,14 @@ export function BracketGrid({
   picks,
   disabled,
   onPick,
+  onSelectBear,
 }: {
   matchups: Matchup[];
   bearsById: Map<string, Bear>;
   picks: Record<string, string>;
   disabled: boolean;
   onPick: (matchupId: string, bearId: string) => void;
+  onSelectBear: (bear: Bear) => void;
 }) {
   const scrollRef = useRef<HTMLElement>(null);
 
@@ -188,6 +190,7 @@ export function BracketGrid({
                   picked={picks[m.id]}
                   disabled={disabled}
                   onPick={(bearId) => onPick(m.id, bearId)}
+                  onSelectBear={onSelectBear}
                   matchResult={resultById.get(m.id)}
                 />
               </div>
@@ -219,6 +222,7 @@ export function BracketGrid({
                     picked={picks[m.id]}
                     disabled={disabled}
                     onPick={(bearId) => onPick(m.id, bearId)}
+                  onSelectBear={onSelectBear}
                     matchResult={resultById.get(m.id)}
                   />
                 </div>
@@ -246,6 +250,7 @@ export function BracketGrid({
                   picked={picks[m.id]}
                   disabled={disabled}
                   onPick={(bearId) => onPick(m.id, bearId)}
+                  onSelectBear={onSelectBear}
                   matchResult={resultById.get(m.id)}
                 />
               </div>
@@ -268,6 +273,7 @@ export function BracketGrid({
                   picked={picks[m.id]}
                   disabled={disabled}
                   onPick={(bearId) => onPick(m.id, bearId)}
+                  onSelectBear={onSelectBear}
                   matchResult={resultById.get(m.id)}
                 />
               </div>

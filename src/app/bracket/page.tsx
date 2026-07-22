@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { pruneInvalidPicks } from "@/lib/bracket/topology";
 import { BracketGrid } from "@/components/bracket/BracketGrid";
+import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 import { Button } from "@/components/ui/Button";
 import { Lock } from "lucide-react";
 
@@ -20,6 +21,7 @@ export default function BracketPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLockNotice, setShowLockNotice] = useState(false);
+  const [viewingBear, setViewingBear] = useState<Bear | null>(null);
 
   // The bootstrap operator account isn't a player — send it away even if it
   // navigates here directly, since the nav link is already hidden for it.
@@ -84,7 +86,7 @@ export default function BracketPage() {
 
   return (
     <div className="flex flex-col">
-      <header className="relative px-5 pt-10 pb-4">
+      <header className="relative px-5 pt-10 pb-4 text-center">
         <h1 className="text-2xl font-black text-neutral-50">My Bracket</h1>
         {bracketLocked && (
           <button
@@ -104,7 +106,14 @@ export default function BracketPage() {
       </header>
 
       <div className="pb-24">
-        <BracketGrid matchups={matchups} bearsById={bearsById} picks={picks} disabled={bracketLocked} onPick={pickBear} />
+        <BracketGrid
+          matchups={matchups}
+          bearsById={bearsById}
+          picks={picks}
+          disabled={bracketLocked}
+          onPick={pickBear}
+          onSelectBear={setViewingBear}
+        />
         {error && <p className="px-5 pt-4 text-sm text-danger">{error}</p>}
       </div>
 
@@ -118,6 +127,8 @@ export default function BracketPage() {
           </Button>
         </div>
       )}
+
+      {viewingBear && <BearProfilePopup bear={viewingBear} onClose={() => setViewingBear(null)} />}
     </div>
   );
 }
