@@ -69,7 +69,7 @@ export default function HomePage() {
                 </div>
                 <div className="rounded-xl bg-surface-elevated px-3 py-2.5 text-center">
                   <p className="text-lg font-bold text-neutral-50">${pot.donationShare}</p>
-                  <p className="text-xs text-neutral-500">Donated</p>
+                  <p className="text-xs text-neutral-500">To be donated</p>
                 </div>
               </div>
             </CardBody>
