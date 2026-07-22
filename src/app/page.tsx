@@ -18,6 +18,7 @@ export default function HomePage() {
   const [bracketLocked, setBracketLocked] = useState(false);
   const [paid, setPaid] = useState({ paid: 0, total: 0 });
   const [completed, setCompleted] = useState({ completed: 0, total: 0 });
+  const [pot, setPot] = useState({ collected: 0, winnerShare: 0, donationShare: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function HomePage() {
         setBracketLocked(data.bracketLocked ?? false);
         setPaid(data.paid ?? { paid: 0, total: 0 });
         setCompleted(data.completed ?? { completed: 0, total: 0 });
+        setPot(data.pot ?? { collected: 0, winnerShare: 0, donationShare: 0 });
         setLoading(false);
       });
   }, []);
@@ -55,6 +57,25 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1 px-5 pb-10 space-y-4">
+        {pot.collected > 0 && (
+          <Card>
+            <CardBody className="gap-3">
+              <p className="text-center text-xs font-bold uppercase tracking-widest text-accent-light">Total Collected</p>
+              <p className="text-center text-3xl font-black text-neutral-50">${pot.collected}</p>
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="rounded-xl bg-surface-elevated px-3 py-2.5 text-center">
+                  <p className="text-lg font-bold text-neutral-50">${pot.winnerShare}</p>
+                  <p className="text-xs text-neutral-500">To the winner(s)</p>
+                </div>
+                <div className="rounded-xl bg-surface-elevated px-3 py-2.5 text-center">
+                  <p className="text-lg font-bold text-neutral-50">${pot.donationShare}</p>
+                  <p className="text-xs text-neutral-500">Donated</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
         {!bracketLocked && paid.total > 0 && (
           <Card>
             <CardBody className="gap-3">

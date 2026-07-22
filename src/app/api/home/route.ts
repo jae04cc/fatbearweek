@@ -32,10 +32,17 @@ export async function GET() {
   const completedCount =
     totalMatchups > 0 ? players.filter((u) => (pickCountByUser.get(u.id) ?? 0) === totalMatchups).length : 0;
 
+  // $20/entry, split evenly between the winner pot and a donation — a fixed
+  // per-season constant, not a setting, since this is a single-tournament
+  // deployment (see V1 assumptions).
+  const ENTRY_FEE = 20;
+  const collected = paidCount * ENTRY_FEE;
+
   return NextResponse.json({
     blocks,
     bracketLocked,
     paid: { paid: paidCount, total: players.length },
     completed: { completed: completedCount, total: players.length },
+    pot: { collected, winnerShare: collected / 2, donationShare: collected / 2 },
   });
 }
