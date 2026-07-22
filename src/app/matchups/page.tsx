@@ -59,6 +59,24 @@ export default function MatchupsPage() {
     }
   };
 
+  const handleUnmarkWinner = async (matchupId: string) => {
+    setError(null);
+    setMarkingId(matchupId);
+    try {
+      const res = await fetch(`/api/admin/matchups/${matchupId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ winnerBearId: null }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? "Failed to undo winner");
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to undo winner");
+    } finally {
+      setMarkingId(null);
+    }
+  };
+
   const handleAdvance = async () => {
     setError(null);
     setAdvancing(true);
@@ -68,6 +86,21 @@ export default function MatchupsPage() {
       load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to advance round");
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
+  const handleRegress = async () => {
+    if (!confirm(`Go back to ${ROUND_LABELS[currentRound - 1]}? This only changes which round is shown here — recorded winners are untouched.`)) return;
+    setError(null);
+    setAdvancing(true);
+    try {
+      const res = await fetch("/api/admin/matchups/regress-round", { method: "POST" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? "Failed to go back a round");
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to go back a round");
     } finally {
       setAdvancing(false);
     }
@@ -106,6 +139,7 @@ export default function MatchupsPage() {
               isAdmin={isAdmin}
               marking={markingId === m.id}
               onMarkWinner={(bearId) => handleMarkWinner(m.id, bearId)}
+              onUnmarkWinner={() => handleUnmarkWinner(m.id)}
             />
           ))
         )}
@@ -115,6 +149,11 @@ export default function MatchupsPage() {
         {isAdmin && matchups.length > 0 && currentRound < 4 && (
           <Button variant="secondary" className="w-full" loading={advancing} disabled={!allDecided} onClick={handleAdvance}>
             {allDecided ? `Advance to ${ROUND_LABELS[currentRound + 1]}` : "Mark all winners to advance"}
+          </Button>
+        )}
+        {isAdmin && matchups.length > 0 && currentRound > 1 && (
+          <Button variant="ghost" className="w-full" loading={advancing} onClick={handleRegress}>
+            Undo advance — back to {ROUND_LABELS[currentRound - 1]}
           </Button>
         )}
       </main>

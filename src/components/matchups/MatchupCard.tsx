@@ -4,7 +4,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import { Trophy } from "lucide-react";
+import { Trophy, Undo2 } from "lucide-react";
 
 interface Props {
   matchup: Matchup;
@@ -13,10 +13,11 @@ interface Props {
   pickCounts: Record<string, number>;
   isAdmin: boolean;
   onMarkWinner: (bearId: string) => void;
+  onUnmarkWinner: () => void;
   marking: boolean;
 }
 
-export function MatchupCard({ matchup, bearA, bearB, pickCounts, isAdmin, onMarkWinner, marking }: Props) {
+export function MatchupCard({ matchup, bearA, bearB, pickCounts, isAdmin, onMarkWinner, onUnmarkWinner, marking }: Props) {
   if (!bearA || !bearB) {
     return (
       <Card>
@@ -63,6 +64,12 @@ export function MatchupCard({ matchup, bearA, bearB, pickCounts, isAdmin, onMark
             );
           })}
         </div>
+        {isAdmin && matchup.winnerBearId && (
+          <Button size="sm" variant="ghost" loading={marking} onClick={onUnmarkWinner} className="self-start">
+            <Undo2 size={14} />
+            Undo winner
+          </Button>
+        )}
       </CardBody>
     </Card>
   );

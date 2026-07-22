@@ -98,10 +98,19 @@ export interface ResolvedMatchup {
   bearBId: string | null;
 }
 
-// Given the bracket's fixed shape and a set of "decided" picks (either a
-// user's own hypothetical picks, or the real recorded winners), works out
-// which two bears are actually facing off in every matchup — including
+// Given the bracket's fixed shape and a set of "decided" picks — always a
+// single bracket's own hypothesis, e.g. one user's own picks, NEVER a mix —
+// works out which two bears are facing off in every matchup, including
 // rounds whose contestants are only known once an earlier round is decided.
+//
+// Slots with a feeder pointer ALWAYS resolve from `decidedFor`, even once
+// the matchup's own bearAId/bearBId has since been overwritten with the
+// REAL winner (that happens the moment an admin marks a real result — see
+// admin/matchups/[id]/route.ts's cascade). A personal bracket must keep
+// showing what that person actually picked, not reality, or their bracket
+// would appear to silently rewrite itself as real results come in. Only
+// slots with NO feeder (Round 1's two fixed bears, Round 2's fixed bye) ever
+// fall back to the raw column, since those were never anyone's prediction.
 export function resolveContestants(
   matchups: Pick<Matchup, "id" | "round" | "position" | "bearAId" | "bearBId" | "feederMatchupAId" | "feederMatchupBId">[],
   decidedFor: Record<string, string | undefined>
@@ -112,8 +121,8 @@ export function resolveContestants(
     id: m.id,
     round: m.round,
     position: m.position,
-    bearAId: m.bearAId ?? (m.feederMatchupAId ? winnerFor(m.feederMatchupAId) : null),
-    bearBId: m.bearBId ?? (m.feederMatchupBId ? winnerFor(m.feederMatchupBId) : null),
+    bearAId: m.feederMatchupAId ? winnerFor(m.feederMatchupAId) : m.bearAId,
+    bearBId: m.feederMatchupBId ? winnerFor(m.feederMatchupBId) : m.bearBId,
   }));
 }
 
@@ -130,8 +139,8 @@ export function pruneInvalidPicks(
   const winnerFor = (matchupId: string): string | null => next[matchupId] ?? null;
 
   for (const m of ordered) {
-    const bearAId = m.bearAId ?? (m.feederMatchupAId ? winnerFor(m.feederMatchupAId) : null);
-    const bearBId = m.bearBId ?? (m.feederMatchupBId ? winnerFor(m.feederMatchupBId) : null);
+    const bearAId = m.feederMatchupAId ? winnerFor(m.feederMatchupAId) : m.bearAId;
+    const bearBId = m.feederMatchupBId ? winnerFor(m.feederMatchupBId) : m.bearBId;
     const picked = next[m.id];
     if (picked && picked !== bearAId && picked !== bearBId) {
       delete next[m.id];

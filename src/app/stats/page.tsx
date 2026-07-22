@@ -4,6 +4,7 @@ import type { Bear, Matchup } from "@/lib/db/schema";
 import type { LeaderboardEntry } from "@/lib/bracket/scoring";
 import { Leaderboard } from "@/components/stats/Leaderboard";
 import { PickPercentageBar } from "@/components/stats/PickPercentageBar";
+import { BracketPopup } from "@/components/stats/BracketPopup";
 import { Card, CardBody } from "@/components/ui/Card";
 
 const ROUND_LABELS: Record<number, string> = {
@@ -18,18 +19,22 @@ export default function StatsPage() {
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [bracketLocked, setBracketLocked] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/bears").then((r) => r.json()),
       fetch("/api/stats/picks").then((r) => r.json()),
       fetch("/api/stats/leaderboard").then((r) => r.json()),
-    ]).then(([bearsData, picksData, leaderboardData]) => {
+      fetch("/api/config").then((r) => r.json()),
+    ]).then(([bearsData, picksData, leaderboardData, configData]) => {
       setBears(Array.isArray(bearsData) ? bearsData : []);
       setMatchups(picksData.matchups ?? []);
       setPickStats(picksData.pickStats ?? {});
       setLeaderboard(leaderboardData.leaderboard ?? []);
+      setBracketLocked(configData.bracketLocked ?? false);
       setLoading(false);
     });
   }, []);
@@ -57,7 +62,10 @@ export default function StatsPage() {
       <main className="flex-1 px-5 pb-10 space-y-8">
         <section>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">Leaderboard</h2>
-          <Leaderboard entries={leaderboard} />
+          {!bracketLocked && (
+            <p className="mb-2 text-xs text-neutral-500">Brackets stay secret until the pool is locked.</p>
+          )}
+          <Leaderboard entries={leaderboard} locked={bracketLocked} onSelectUser={setViewingUserId} />
         </section>
 
         <section>
@@ -90,6 +98,8 @@ export default function StatsPage() {
           </div>
         </section>
       </main>
+
+      {viewingUserId && <BracketPopup userId={viewingUserId} bears={bears} onClose={() => setViewingUserId(null)} />}
     </div>
   );
 }
