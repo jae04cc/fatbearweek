@@ -16,7 +16,7 @@ export default function ResultsPage() {
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [bracketLocked, setBracketLocked] = useState(false);
-  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
+  const [bracketRevealed, setBracketRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [viewingBear, setViewingBear] = useState<Bear | null>(null);
@@ -33,7 +33,7 @@ export default function ResultsPage() {
       setPickStats(picksData.pickStats ?? {});
       setLeaderboard(leaderboardData.leaderboard ?? []);
       setBracketLocked(configData.bracketLocked ?? false);
-      setRevealedToPlayers(configData.revealedToPlayers ?? false);
+      setBracketRevealed(configData.bracketRevealed ?? false);
       setLoading(false);
     });
   }, []);
@@ -41,7 +41,7 @@ export default function ResultsPage() {
   const bearsById = new Map(bears.map((b) => [b.id, b]));
   // Straight-up hidden (not a placeholder) until the admin reveals it, or
   // there's simply nothing seeded yet — admins can still preview it.
-  const showBracket = matchups.length > 0 && (isAdmin || revealedToPlayers);
+  const showBracket = matchups.length > 0 && (isAdmin || bracketRevealed);
 
   if (loading) {
     return (

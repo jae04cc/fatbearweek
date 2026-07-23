@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { isBracketLocked, getCurrentRound, isRevealedToPlayers } from "@/lib/settings";
+import { isBracketLocked, getCurrentRound, isBearsRevealed, isBracketRevealed } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [bracketLocked, currentRound, revealedToPlayers] = await Promise.all([
+  const [bracketLocked, currentRound, bearsRevealed, bracketRevealed] = await Promise.all([
     isBracketLocked(),
     getCurrentRound(),
-    isRevealedToPlayers(),
+    isBearsRevealed(),
+    isBracketRevealed(),
   ]);
-  return NextResponse.json({ bracketLocked, currentRound, revealedToPlayers });
+  return NextResponse.json({ bracketLocked, currentRound, bearsRevealed, bracketRevealed });
 }

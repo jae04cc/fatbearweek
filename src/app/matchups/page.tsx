@@ -21,7 +21,7 @@ export default function MatchupsPage() {
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
   const [currentRound, setCurrentRound] = useState(1);
-  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
+  const [bracketRevealed, setBracketRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [advancing, setAdvancing] = useState(false);
@@ -38,7 +38,7 @@ export default function MatchupsPage() {
       setMatchups(matchupData.matchups ?? []);
       setPickStats(matchupData.pickStats ?? {});
       setCurrentRound(matchupData.currentRound ?? 1);
-      setRevealedToPlayers(configData.revealedToPlayers ?? false);
+      setBracketRevealed(configData.bracketRevealed ?? false);
       setLoading(false);
     });
   }, []);
@@ -115,7 +115,7 @@ export default function MatchupsPage() {
   const allDecided = matchups.length > 0 && matchups.every((m) => m.winnerBearId);
   // Nothing to show if the bracket isn't seeded yet, or if it is but the
   // admin hasn't revealed it to players yet (admins can still see it).
-  const notReady = matchups.length === 0 || (!isAdmin && !revealedToPlayers);
+  const notReady = matchups.length === 0 || (!isAdmin && !bracketRevealed);
 
   if (loading) {
     return (

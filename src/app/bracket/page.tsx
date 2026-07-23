@@ -16,7 +16,7 @@ export default function BracketPage() {
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [bracketLocked, setBracketLocked] = useState(false);
-  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
+  const [bracketRevealed, setBracketRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -40,7 +40,7 @@ export default function BracketPage() {
       setMatchups(bracketData.matchups ?? []);
       setPicks(bracketData.picks ?? {});
       setBracketLocked(bracketData.bracketLocked ?? false);
-      setRevealedToPlayers(configData.revealedToPlayers ?? false);
+      setBracketRevealed(configData.bracketRevealed ?? false);
       setLoading(false);
     });
   }, []);
@@ -49,7 +49,7 @@ export default function BracketPage() {
   const isAdmin = session?.user.isAdmin ?? false;
   // Nothing to show if the bracket isn't seeded yet, or if it is but the
   // admin hasn't revealed it to players yet (admins can still preview it).
-  const notReady = matchups.length === 0 || (!isAdmin && !revealedToPlayers);
+  const notReady = matchups.length === 0 || (!isAdmin && !bracketRevealed);
 
   const pickBear = useCallback(
     (matchupId: string, bearId: string) => {

@@ -8,14 +8,14 @@ export default function BearsPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user.isAdmin ?? false;
   const [bears, setBears] = useState<Bear[]>([]);
-  const [revealedToPlayers, setRevealedToPlayers] = useState(false);
+  const [bearsRevealed, setBearsRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([fetch("/api/bears").then((r) => r.json()), fetch("/api/config").then((r) => r.json())]).then(
       ([bearsData, configData]) => {
         setBears(Array.isArray(bearsData) ? bearsData : []);
-        setRevealedToPlayers(configData.revealedToPlayers ?? false);
+        setBearsRevealed(configData.bearsRevealed ?? false);
         setLoading(false);
       }
     );
@@ -24,7 +24,7 @@ export default function BearsPage() {
   // Bears get added one at a time while setting up for the season — admins
   // can watch that happen, but players see a placeholder until the roster
   // is revealed, so nobody sees the roster trickle in mid-setup.
-  const hiddenFromPlayer = !isAdmin && !revealedToPlayers;
+  const hiddenFromPlayer = !isAdmin && !bearsRevealed;
 
   return (
     <div className="flex flex-col min-h-screen">
