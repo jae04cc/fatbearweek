@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Home, PawPrint, Trophy, ListChecks, BarChart3, Settings, CircleUser } from "lucide-react";
 
@@ -16,6 +17,20 @@ const LINKS = [
 export function NavBar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  // Only true once actually detected client-side after mount (never during
+  // SSR/first paint), so this can't affect anything until it's confirmed —
+  // regular browser tabs (mobile Safari included) always render exactly as
+  // before. "Add to Home Screen" apps on iOS drop Safari's own chrome
+  // entirely, so this fixed bottom bar becomes the literal last thing on
+  // screen, flush against the home indicator curve and rounded corners —
+  // something Safari's own toolbar always used to buffer for us.
+  const [isStandaloneApp, setIsStandaloneApp] = useState(false);
+
+  useEffect(() => {
+    const nav = window.navigator as Navigator & { standalone?: boolean };
+    const standalone = nav.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    setIsStandaloneApp(standalone);
+  }, []);
 
   if (status !== "authenticated" || pathname === "/login") return null;
 
@@ -27,8 +42,16 @@ export function NavBar() {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 sm:sticky sm:inset-x-auto sm:bottom-auto sm:top-0 z-40 w-full border-t border-white/10 bg-surface/95 backdrop-blur-sm sm:border-t-0 sm:border-b">
-      <div className="mx-auto flex max-w-2xl items-stretch justify-between px-1 sm:justify-center sm:gap-1 sm:py-2">
+    <nav
+      style={isStandaloneApp ? { paddingBottom: "24px" } : undefined}
+      className="fixed inset-x-0 bottom-0 sm:sticky sm:inset-x-auto sm:bottom-auto sm:top-0 z-40 w-full border-t border-white/10 bg-surface/95 backdrop-blur-sm sm:border-t-0 sm:border-b"
+    >
+      <div
+        className={cn(
+          "mx-auto flex max-w-2xl items-stretch justify-between sm:justify-center sm:gap-1 sm:py-2",
+          isStandaloneApp ? "px-4" : "px-1"
+        )}
+      >
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
