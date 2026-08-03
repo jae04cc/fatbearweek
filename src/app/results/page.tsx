@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import type { LeaderboardEntry } from "@/lib/bracket/scoring";
+import { Card, CardBody } from "@/components/ui/Card";
 import { Leaderboard } from "@/components/stats/Leaderboard";
 import { BracketPopup } from "@/components/stats/BracketPopup";
 import { ResultsBracket } from "@/components/results/ResultsBracket";
@@ -15,6 +16,7 @@ export default function ResultsPage() {
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [completed, setCompleted] = useState({ completed: 0, total: 0 });
   const [bracketLocked, setBracketLocked] = useState(false);
   const [bracketRevealed, setBracketRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,7 @@ export default function ResultsPage() {
       setMatchups(picksData.matchups ?? []);
       setPickStats(picksData.pickStats ?? {});
       setLeaderboard(leaderboardData.leaderboard ?? []);
+      setCompleted(leaderboardData.completed ?? { completed: 0, total: 0 });
       setBracketLocked(configData.bracketLocked ?? false);
       setBracketRevealed(configData.bracketRevealed ?? false);
       setLoading(false);
@@ -42,6 +45,10 @@ export default function ResultsPage() {
   // Straight-up hidden (not a placeholder) until the admin reveals it, or
   // there's simply nothing seeded yet — admins can still preview it.
   const showBracket = matchups.length > 0 && (isAdmin || bracketRevealed);
+  // Same reveal gate as the bracket itself — there's nothing to complete until
+  // players can see it. Drops away once locked, when everyone's bracket is final.
+  const showCompleted = completed.total > 0 && !bracketLocked && (isAdmin || bracketRevealed);
+  const completedPct = completed.total > 0 ? Math.round((completed.completed / completed.total) * 100) : 0;
 
   if (loading) {
     return (
@@ -59,6 +66,22 @@ export default function ResultsPage() {
 
       <main className="flex-1 pb-10 space-y-8">
         <section className="px-5">
+          {showCompleted && (
+            <Card className="mb-5">
+              <CardBody className="gap-1 py-3">
+                <div className="flex items-baseline justify-between text-xs">
+                  <span className="font-semibold text-neutral-300">Brackets completed</span>
+                  <span className="text-neutral-500">
+                    {completed.completed} of {completed.total}
+                  </span>
+                </div>
+                <div className="mt-1 flex h-1.5 w-full overflow-hidden rounded-full bg-black/30">
+                  <div className="h-full bg-accent" style={{ width: `${completedPct}%` }} />
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
           <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-neutral-500">Leaderboard</h2>
           {!bracketLocked && (
             <p className="mb-2 text-xs text-neutral-500">Brackets stay secret until the pool is locked.</p>
