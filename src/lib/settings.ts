@@ -47,6 +47,12 @@ export async function getSignupCode(): Promise<string | null> {
   return getSetting("signup_code");
 }
 
+// A short, always-visible note above the announcements telling people how to
+// pay in (Venmo handle, etc.). Markdown, same as announcement bodies.
+export async function getPaymentInfo(): Promise<string> {
+  return (await getSetting("payment_info")) ?? "";
+}
+
 export interface HomeContentBlock {
   id: string;
   title: string;

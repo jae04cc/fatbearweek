@@ -1,9 +1,11 @@
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 
-export function AnnouncementBody({ body }: { body: string }) {
+// `compact` tightens the type/spacing for small inline uses like the payment
+// note, where the same markdown support is wanted but the box has to stay short.
+export function AnnouncementBody({ body, compact = false }: { body: string; compact?: boolean }) {
   return (
-    <div className="space-y-3 text-sm text-neutral-300">
+    <div className={compact ? "space-y-1.5 text-xs text-neutral-300" : "space-y-3 text-sm text-neutral-300"}>
       <Markdown
         remarkPlugins={[remarkBreaks]}
         components={{
