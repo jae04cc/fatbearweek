@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { AnnouncementBody } from "@/components/home/AnnouncementBody";
 import { PostComments } from "@/components/home/PostComments";
-import { cn, pluralize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { HomeContentBlock } from "@/lib/settings";
 
 export default function HomePage() {
@@ -102,14 +102,7 @@ export default function HomePage() {
           </Card>
         )}
 
-        {/* Hairline fading out at both ends — enough to separate the pool
-            summary above from the announcement feed below without reading as
-            a hard section break. */}
-        {showDivider && (
-          <div className="py-2">
-            <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-          </div>
-        )}
+        {showDivider && <SectionDivider />}
 
         {blocks.length === 0 ? (
           <p className="text-neutral-500 text-sm">No announcements yet.</p>
@@ -126,6 +119,16 @@ export default function HomePage() {
           ))
         )}
       </main>
+    </div>
+  );
+}
+
+// Hairline fading out at both ends — enough to separate the pool summary above
+// from the announcement feed below without reading as a hard section break.
+function SectionDivider() {
+  return (
+    <div className="py-2">
+      <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
     </div>
   );
 }
@@ -148,7 +151,7 @@ function AnnouncementCard({
 
   return (
     <Card>
-      <div className={cn("flex flex-col overflow-hidden", !open && "h-44")}>
+      <div className={cn("flex flex-col overflow-hidden", !open && "h-36")}>
         {block.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -165,23 +168,26 @@ function AnnouncementCard({
         >
           {block.title && <h2 className="mb-1 text-base font-bold text-neutral-50">{block.title}</h2>}
           <AnnouncementBody body={block.body} />
-          {open && <PostComments blockId={block.id} onCountChange={onCommentCountChange} />}
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-1">
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          aria-expanded={open}
-          className="text-xs font-semibold text-accent-light [-webkit-tap-highlight-color:transparent]"
-        >
-          {open ? "Collapse" : "Expand"}
-        </button>
-        {commentCount > 0 && (
-          <span className="text-xs text-neutral-500">{pluralize(commentCount, "comment")}</span>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        className="w-full px-4 pb-3 pt-1 text-left text-xs font-semibold text-accent-light [-webkit-tap-highlight-color:transparent]"
+      >
+        {open ? "Collapse" : "Expand"}
+      </button>
+
+      {/* Its own strip below the post body, with its own show/hide — reading
+          the post and reading the thread are separate decisions. */}
+      <PostComments
+        blockId={block.id}
+        postTitle={block.title}
+        count={commentCount}
+        onCountChange={onCommentCountChange}
+      />
     </Card>
   );
 }
