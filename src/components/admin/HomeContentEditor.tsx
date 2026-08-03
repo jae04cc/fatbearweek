@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { FloatingActions } from "@/components/ui/FloatingActions";
 import { generateId } from "@/lib/utils";
-import { Trash2, ImagePlus, Image as ImageIcon } from "lucide-react";
+import { Trash2, ImagePlus, Image as ImageIcon, ChevronUp, ChevronDown } from "lucide-react";
 import type { HomeContentBlock } from "@/lib/settings";
 
 async function uploadImage(file: File): Promise<string> {
@@ -18,6 +19,7 @@ async function uploadImage(file: File): Promise<string> {
 
 export function HomeContentEditor() {
   const [blocks, setBlocks] = useState<HomeContentBlock[]>([]);
+  const [paymentInfo, setPaymentInfo] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -29,6 +31,7 @@ export function HomeContentEditor() {
       .then((r) => r.json())
       .then((data) => {
         setBlocks(data.blocks ?? []);
+        setPaymentInfo(data.paymentInfo ?? "");
         setLoading(false);
       });
   }, []);
@@ -38,12 +41,28 @@ export function HomeContentEditor() {
     setSaved(false);
   };
 
+  // Stored array order IS display order, newest first — so a new post goes on
+  // the front of the list, and this editor shows posts in exactly the order
+  // players see them.
   const addBlock = () => {
-    setBlocks((prev) => [...prev, { id: generateId(), title: "", body: "" }]);
+    setBlocks((prev) => [{ id: generateId(), title: "", body: "" }, ...prev]);
+    setSaved(false);
   };
 
   const removeBlock = (id: string) => {
     setBlocks((prev) => prev.filter((b) => b.id !== id));
+    setSaved(false);
+  };
+
+  const moveBlock = (id: string, direction: -1 | 1) => {
+    setBlocks((prev) => {
+      const index = prev.findIndex((b) => b.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
     setSaved(false);
   };
 
@@ -69,7 +88,7 @@ export function HomeContentEditor() {
       await fetch("/api/admin/home", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blocks }),
+        body: JSON.stringify({ blocks, paymentInfo }),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -87,10 +106,38 @@ export function HomeContentEditor() {
   }
 
   return (
-    <div className="space-y-4">
+    // pb-24 keeps the last post clear of the floating Save button
+    <div className="space-y-4 pb-24">
       {error && <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>}
 
-      {blocks.map((block) => (
+      <Card>
+        <CardBody className="gap-2">
+          <div>
+            <p className="font-semibold text-neutral-100">Payment info</p>
+            <p className="text-xs text-neutral-500">
+              Shown in a compact box above the posts on the home page. Markdown works. Leave empty to hide it.
+            </p>
+          </div>
+          <textarea
+            placeholder="e.g. **$20 per bracket** — Venmo @someone"
+            value={paymentInfo}
+            onChange={(e) => {
+              setPaymentInfo(e.target.value);
+              setSaved(false);
+            }}
+            rows={3}
+            className="w-full rounded-xl border border-white/10 bg-surface-elevated px-4 py-3 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </CardBody>
+      </Card>
+
+      {/* Add sits above the list because new posts go to the top — the order
+          here is the order players see, newest first. Save is floating. */}
+      <Button size="sm" variant="secondary" onClick={addBlock}>
+        Add post
+      </Button>
+
+      {blocks.map((block, index) => (
         <BlockEditor
           key={block.id}
           block={block}
@@ -99,18 +146,18 @@ export function HomeContentEditor() {
           onCoverFile={(file) => handleCoverImageFile(block.id, file)}
           onRemoveCoverImage={() => updateBlock(block.id, { imageUrl: undefined })}
           onRemove={() => removeBlock(block.id)}
+          onMove={(direction) => moveBlock(block.id, direction)}
+          canMoveUp={index > 0}
+          canMoveDown={index < blocks.length - 1}
           onError={setError}
         />
       ))}
 
-      <div className="flex gap-2">
-        <Button size="sm" variant="secondary" onClick={addBlock}>
-          Add block
-        </Button>
-        <Button size="sm" onClick={handleSave} loading={saving}>
+      <FloatingActions>
+        <Button onClick={handleSave} loading={saving}>
           {saved ? "Saved!" : "Save"}
         </Button>
-      </div>
+      </FloatingActions>
     </div>
   );
 }
@@ -122,6 +169,9 @@ function BlockEditor({
   onCoverFile,
   onRemoveCoverImage,
   onRemove,
+  onMove,
+  canMoveUp,
+  canMoveDown,
   onError,
 }: {
   block: HomeContentBlock;
@@ -130,6 +180,9 @@ function BlockEditor({
   onCoverFile: (file: File | undefined) => void;
   onRemoveCoverImage: () => void;
   onRemove: () => void;
+  onMove: (direction: -1 | 1) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   onError: (message: string | null) => void;
 }) {
   const coverFileInput = useRef<HTMLInputElement>(null);
@@ -246,10 +299,20 @@ function BlockEditor({
           onChange={(e) => onCoverFile(e.target.files?.[0])}
         />
 
-        <Button size="sm" variant="danger" onClick={onRemove} className="self-start">
-          <Trash2 size={14} />
-          Remove block
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="danger" onClick={onRemove}>
+            <Trash2 size={14} />
+            Remove post
+          </Button>
+          {/* Reorder, so posts carried over from before "newest first" — or any
+              post that should be pinned higher — can be moved without retyping. */}
+          <Button size="sm" variant="secondary" onClick={() => onMove(-1)} disabled={!canMoveUp} aria-label="Move post up">
+            <ChevronUp size={14} />
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => onMove(1)} disabled={!canMoveDown} aria-label="Move post down">
+            <ChevronDown size={14} />
+          </Button>
+        </div>
       </CardBody>
     </Card>
   );
