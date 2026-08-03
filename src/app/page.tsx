@@ -47,8 +47,13 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-5 pt-10 pb-6 text-center">
-        <h1 className="text-2xl font-black text-neutral-50">🐻 Fat Bear Week</h1>
-        <p className="text-sm text-neutral-400 mt-0.5">
+        {/* Decorative only — the title right below says the same thing, so
+            screen readers shouldn't announce these as content. */}
+        <p className="text-2xl leading-none" aria-hidden="true">
+          🐻🍑
+        </p>
+        <h1 className="mt-1.5 text-2xl font-black text-neutral-50">Fat Bear Week</h1>
+        <p className="mt-0.5 text-xs text-neutral-400">
           Welcome{session?.user.displayName ? `, ${session.user.displayName}` : ""}
         </p>
       </header>
