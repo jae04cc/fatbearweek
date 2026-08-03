@@ -7,6 +7,7 @@ import { pruneInvalidPicks } from "@/lib/bracket/topology";
 import { BracketGrid } from "@/components/bracket/BracketGrid";
 import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 import { Button } from "@/components/ui/Button";
+import { FloatingActions } from "@/components/ui/FloatingActions";
 import { Lock } from "lucide-react";
 
 export default function BracketPage() {
@@ -130,14 +131,14 @@ export default function BracketPage() {
           </div>
 
           {!bracketLocked && (
-            <div className="fixed bottom-20 right-5 sm:bottom-6 sm:right-6 z-30 flex gap-2">
-              <Button variant="secondary" onClick={handleClear} className="shadow-xl shadow-black/40">
+            <FloatingActions>
+              <Button variant="secondary" onClick={handleClear}>
                 Clear
               </Button>
-              <Button onClick={handleSave} loading={saving} className="shadow-xl shadow-black/40">
+              <Button onClick={handleSave} loading={saving}>
                 {saved ? "Saved!" : "Save"}
               </Button>
-            </div>
+            </FloatingActions>
           )}
         </>
       )}
