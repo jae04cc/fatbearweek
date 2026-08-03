@@ -2,21 +2,19 @@
 import { useEffect, useRef } from "react";
 import type { Bear } from "@/lib/db/schema";
 import { BearCard } from "@/components/bears/BearCard";
+import { useScrollLock } from "@/lib/useScrollLock";
 import { X } from "lucide-react";
 
 export function BearProfilePopup({ bear, onClose }: { bear: Bear; onClose: () => void }) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  useScrollLock();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
   return (
@@ -27,7 +25,10 @@ export function BearProfilePopup({ bear, onClose }: { bear: Bear; onClose: () =>
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
+      {/* Oversized on purpose: if iOS pans the visual viewport (keyboard, or a
+          rubber-band scroll), a scrim sized exactly to the viewport slides off
+          one edge and shows a hard line of page background. This can't. */}
+      <div className="absolute inset-x-0 -inset-y-full bg-black/85" />
       {/* The close button lives in this outer, non-scrolling wrapper — not
           inside the scrollable card below — so it stays pinned to the
           popup's corner no matter how far the bio/photos are scrolled. */}

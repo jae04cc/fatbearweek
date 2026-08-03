@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { BracketGrid } from "@/components/bracket/BracketGrid";
 import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
+import { useScrollLock } from "@/lib/useScrollLock";
 import { X } from "lucide-react";
 
 export function BracketPopup({ userId, bears, onClose }: { userId: string; bears: Bear[]; onClose: () => void }) {
@@ -17,6 +18,7 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
   const gridWrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [wrapperWidth, setWrapperWidth] = useState<number | null>(null);
+  useScrollLock();
 
   // The bracket is a fixed, fairly tall grid — someone's full bracket often
   // doesn't fit under the header within 90vh. Rather than let it scroll
@@ -60,11 +62,7 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
   useEffect(() => {
@@ -92,7 +90,7 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
+      <div className="absolute inset-x-0 -inset-y-full bg-black/85" />
       <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4">
           <h2 className="text-lg font-bold text-neutral-50">{loading ? "Loading…" : `${displayName}'s Bracket`}</h2>

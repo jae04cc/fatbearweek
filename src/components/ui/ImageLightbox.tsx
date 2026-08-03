@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { useScrollLock } from "@/lib/useScrollLock";
 import { X } from "lucide-react";
 
 interface ImageLightboxProps {
@@ -10,17 +11,14 @@ interface ImageLightboxProps {
 
 export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  useScrollLock();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
   return (
@@ -31,7 +29,7 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+      <div className="absolute inset-x-0 -inset-y-full bg-black/90" />
       <button
         type="button"
         onClick={onClose}

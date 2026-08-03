@@ -1,6 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
+import { useScrollLock } from "@/lib/useScrollLock";
 import { X } from "lucide-react";
 
 interface ModalProps {
@@ -13,6 +14,7 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children, className }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  useScrollLock(open);
 
   useEffect(() => {
     if (!open) return;
@@ -22,14 +24,6 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
-
-  useEffect(() => {
-    if (open) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
 
   if (!open) return null;
 
@@ -41,7 +35,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="absolute inset-x-0 -inset-y-full bg-black/85" />
       <div
         className={cn(
           "relative z-10 w-full sm:max-w-lg bg-surface-card",

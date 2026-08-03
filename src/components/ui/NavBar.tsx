@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAnyPopupOpen } from "@/lib/popupState";
 import { Home, PawPrint, Trophy, ListChecks, BarChart3, Settings, CircleUser } from "lucide-react";
 
 const LINKS = [
@@ -25,6 +26,7 @@ export function NavBar() {
   // screen, flush against the home indicator curve and rounded corners —
   // something Safari's own toolbar always used to buffer for us.
   const [isStandaloneApp, setIsStandaloneApp] = useState(false);
+  const popupOpen = useAnyPopupOpen();
 
   useEffect(() => {
     const nav = window.navigator as Navigator & { standalone?: boolean };
@@ -33,6 +35,9 @@ export function NavBar() {
   }, []);
 
   if (status !== "authenticated" || pathname === "/login") return null;
+  // A popup owns the screen while it's up — see src/lib/popupState.ts for why
+  // this bar has to leave rather than just sit behind the scrim.
+  if (popupOpen) return null;
 
   // The bootstrap operator account isn't a player — it has no bracket to fill out
   const links = [
