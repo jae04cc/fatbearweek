@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { AnnouncementBody } from "@/components/home/AnnouncementBody";
-import { cn } from "@/lib/utils";
+import { PostComments } from "@/components/home/PostComments";
+import { cn, pluralize } from "@/lib/utils";
 import type { HomeContentBlock } from "@/lib/settings";
 
 export default function HomePage() {
   const { data: session } = useSession();
   const [blocks, setBlocks] = useState<HomeContentBlock[]>([]);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [paymentInfo, setPaymentInfo] = useState("");
   const [bracketLocked, setBracketLocked] = useState(false);
   const [paid, setPaid] = useState({ paid: 0, total: 0 });
@@ -20,6 +22,7 @@ export default function HomePage() {
       .then((r) => r.json())
       .then((data) => {
         setBlocks(data.blocks ?? []);
+        setCommentCounts(data.commentCounts ?? {});
         setPaymentInfo(data.paymentInfo ?? "");
         setBracketLocked(data.bracketLocked ?? false);
         setPaid(data.paid ?? { paid: 0, total: 0 });
@@ -111,7 +114,16 @@ export default function HomePage() {
         {blocks.length === 0 ? (
           <p className="text-neutral-500 text-sm">No announcements yet.</p>
         ) : (
-          blocks.map((block) => <AnnouncementCard key={block.id} block={block} />)
+          blocks.map((block) => (
+            <AnnouncementCard
+              key={block.id}
+              block={block}
+              commentCount={commentCounts[block.id] ?? 0}
+              onCommentCountChange={(count) =>
+                setCommentCounts((prev) => ({ ...prev, [block.id]: count }))
+              }
+            />
+          ))
         )}
       </main>
     </div>
@@ -123,7 +135,15 @@ export default function HomePage() {
 // the feed reads as an even stack of previews rather than a wall of text.
 // The preview is faded out with a mask rather than a gradient overlay, so it
 // works without having to match the card's translucent background colour.
-function AnnouncementCard({ block }: { block: HomeContentBlock }) {
+function AnnouncementCard({
+  block,
+  commentCount,
+  onCommentCountChange,
+}: {
+  block: HomeContentBlock;
+  commentCount: number;
+  onCommentCountChange: (count: number) => void;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -145,17 +165,23 @@ function AnnouncementCard({ block }: { block: HomeContentBlock }) {
         >
           {block.title && <h2 className="mb-1 text-base font-bold text-neutral-50">{block.title}</h2>}
           <AnnouncementBody body={block.body} />
+          {open && <PostComments blockId={block.id} onCountChange={onCommentCountChange} />}
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-expanded={open}
-        className="w-full px-4 pb-3 pt-1 text-left text-xs font-semibold text-accent-light [-webkit-tap-highlight-color:transparent]"
-      >
-        {open ? "Collapse" : "Expand"}
-      </button>
+      <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-1">
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-expanded={open}
+          className="text-xs font-semibold text-accent-light [-webkit-tap-highlight-color:transparent]"
+        >
+          {open ? "Collapse" : "Expand"}
+        </button>
+        {commentCount > 0 && (
+          <span className="text-xs text-neutral-500">{pluralize(commentCount, "comment")}</span>
+        )}
+      </div>
     </Card>
   );
 }

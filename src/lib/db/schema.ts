@@ -94,6 +94,24 @@ export const appSettings = sqliteTable("app_settings", {
 });
 
 // ---------------------------------------------------------------------------
+// Post comments — replies to a home-page announcement block.
+//
+// `blockId` is deliberately NOT a foreign key: announcement blocks live inside
+// the `home_content` JSON blob in app_settings, not in a table of their own,
+// so there's nothing to reference. That means comments can outlive a deleted
+// post, which the delete path cleans up explicitly.
+// ---------------------------------------------------------------------------
+export const postComments = sqliteTable("post_comments", {
+  id: text("id").primaryKey(),
+  blockId: text("block_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+// ---------------------------------------------------------------------------
 // Relations
 // ---------------------------------------------------------------------------
 export const bearsRelations = relations(bears, ({ many }) => ({
@@ -119,6 +137,11 @@ export const matchupsRelations = relations(matchups, ({ one, many }) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   picks: many(userPicks),
+  comments: many(postComments),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one }) => ({
+  user: one(users, { fields: [postComments.userId], references: [users.id] }),
 }));
 
 export const userPicksRelations = relations(userPicks, ({ one }) => ({
@@ -139,3 +162,5 @@ export type NewUserPick = typeof userPicks.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type AppSetting = typeof appSettings.$inferSelect;
+export type PostComment = typeof postComments.$inferSelect;
+export type NewPostComment = typeof postComments.$inferInsert;
