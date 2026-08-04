@@ -28,6 +28,19 @@ export async function runMigrations() {
   // to actually fire.
   await client.execute("PRAGMA foreign_keys = ON");
 
+  // Concurrency/durability tuning. SQLite is single-writer; these keep it from
+  // erroring under a burst of concurrent traffic (e.g. everyone filling their
+  // bracket right before lock):
+  //  - WAL lets readers proceed while a write is in flight, instead of the two
+  //    blocking each other.
+  //  - busy_timeout makes a would-be-blocked writer wait and retry for 5s
+  //    rather than immediately failing with "database is locked".
+  //  - synchronous=NORMAL is the standard, safe durability/speed balance under
+  //    WAL (a crash can lose the last transaction, never corrupt the file).
+  await client.execute("PRAGMA journal_mode = WAL");
+  await client.execute("PRAGMA busy_timeout = 5000");
+  await client.execute("PRAGMA synchronous = NORMAL");
+
   // executeMultiple runs a batch of DDL statements in one shot
   await client.executeMultiple(`
     CREATE TABLE IF NOT EXISTS bears (
