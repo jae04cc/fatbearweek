@@ -33,12 +33,6 @@ export function formatDateTime(date: DateLike): string {
   return `${formatDate(d)} - ${time}`;
 }
 
-export function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
-
 export function pluralize(count: number, word: string, plural?: string): string {
   return count === 1 ? `1 ${word}` : `${count} ${plural ?? word + "s"}`;
 }
