@@ -5,7 +5,22 @@ on:
     branches: [main]
 
 jobs:
+  # Gate: the bracket topology/scoring unit tests must pass before anything is
+  # built or pushed. A regression in the math stops the deploy instead of
+  # shipping a broken leaderboard.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
