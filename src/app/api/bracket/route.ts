@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { userPicks } from "@/lib/db/schema";
 import { auth } from "@/auth";
-import { isBracketLocked } from "@/lib/settings";
+import { isBracketLocked, isBracketRevealed } from "@/lib/settings";
 import { resolveContestants } from "@/lib/bracket/topology";
 import { generateId } from "@/lib/utils";
 import { eq } from "drizzle-orm";
@@ -13,11 +13,18 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [allMatchups, myPicks, bracketLocked] = await Promise.all([
+  const [allMatchups, myPicks, bracketLocked, bracketRevealed] = await Promise.all([
     db.query.matchups.findMany(),
     db.query.userPicks.findMany({ where: eq(userPicks.userId, session.user.id) }),
     isBracketLocked(),
+    isBracketRevealed(),
   ]);
+
+  // Gated server-side (see /api/bears) — empty matchups keeps the fill page in
+  // its placeholder state so a non-admin can't fetch the bracket shape early.
+  if (!session.user.isAdmin && !bracketRevealed) {
+    return NextResponse.json({ bracketLocked, matchups: [], picks: {} });
+  }
 
   const picksByMatchupId = Object.fromEntries(myPicks.map((p) => [p.matchupId, p.pickedBearId]));
 
@@ -54,19 +61,25 @@ export async function PUT(req: NextRequest) {
     }
 
     const now = new Date();
-    await db.delete(userPicks).where(eq(userPicks.userId, session.user.id));
     const entries = Object.entries(submitted);
-    if (entries.length > 0) {
-      await db.insert(userPicks).values(
-        entries.map(([matchupId, pickedBearId]) => ({
-          id: generateId(),
-          userId: session.user.id,
-          matchupId,
-          pickedBearId,
-          updatedAt: now,
-        }))
-      );
-    }
+
+    // Delete-then-insert must be atomic: without a transaction, a crash between
+    // the two statements would leave the bracket wiped with nothing written
+    // back. The transaction makes it all-or-nothing.
+    await db.transaction(async (tx) => {
+      await tx.delete(userPicks).where(eq(userPicks.userId, session.user.id));
+      if (entries.length > 0) {
+        await tx.insert(userPicks).values(
+          entries.map(([matchupId, pickedBearId]) => ({
+            id: generateId(),
+            userId: session.user.id,
+            matchupId,
+            pickedBearId,
+            updatedAt: now,
+          }))
+        );
+      }
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

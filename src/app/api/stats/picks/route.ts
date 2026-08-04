@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { matchups } from "@/lib/db/schema";
 import { auth } from "@/auth";
+import { isBracketRevealed } from "@/lib/settings";
 import { asc } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Gated server-side (see /api/bears) — the results bracket is built from
+  // this, so it stays hidden for non-admins until the bracket reveals.
+  if (!session.user.isAdmin && !(await isBracketRevealed())) {
+    return NextResponse.json({ matchups: [], pickStats: {}, totalPlayers: 0 });
+  }
 
   const [allMatchups, allPicks, allUsers] = await Promise.all([
     db.query.matchups.findMany({ orderBy: [asc(matchups.round), asc(matchups.position)] }),
