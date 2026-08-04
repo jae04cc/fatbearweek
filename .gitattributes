@@ -1,0 +1,17 @@
+# Normalize line endings: store text as LF in the repo and check it out as LF
+# on every platform. This project builds and runs in a Linux container, so LF
+# everywhere is what the code actually wants — and it silences Git's CRLF
+# conversion warnings on Windows checkouts.
+* text=auto eol=lf
+
+# Binary files Git must never touch (auto-detection is usually right, but being
+# explicit avoids any chance of a mangled image or font).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.gif  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+*.db   binary
