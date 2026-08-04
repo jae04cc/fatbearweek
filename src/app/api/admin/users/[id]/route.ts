@@ -44,6 +44,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
     }
 
+    if (body.password && body.password.length < 8) {
+      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+    }
+
     const updates: Partial<typeof users.$inferInsert> = {};
     if (body.isAdmin !== undefined) updates.isAdmin = body.isAdmin;
     if (body.hasPaid !== undefined) updates.hasPaid = body.hasPaid;
