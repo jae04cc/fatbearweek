@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { computeLeaderboard } from "@/lib/bracket/scoring";
+import { playerIdSet } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { error } = await requireAuth();
+  if (error) return error;
 
   const [allUsers, allMatchups, allPicks] = await Promise.all([
     db.query.users.findMany(),
@@ -15,10 +16,8 @@ export async function GET() {
     db.query.userPicks.findMany(),
   ]);
 
-  // Only the bootstrap operator account is excluded — every other user
-  // (including other admins) is a real player
-  const players = allUsers.filter((u) => !u.isBootstrap);
-  const playerIds = new Set(players.map((u) => u.id));
+  const playerIds = playerIdSet(allUsers);
+  const players = allUsers.filter((u) => playerIds.has(u.id));
   const playerPicks = allPicks.filter((p) => playerIds.has(p.userId));
 
   const leaderboard = computeLeaderboard(players, allMatchups, playerPicks);

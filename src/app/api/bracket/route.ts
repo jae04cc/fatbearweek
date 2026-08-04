@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { userPicks } from "@/lib/db/schema";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { isBracketLocked, isBracketRevealed } from "@/lib/settings";
 import { resolveContestants } from "@/lib/bracket/topology";
 import { generateId } from "@/lib/utils";
@@ -10,8 +10,8 @@ import { eq } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const [allMatchups, myPicks, bracketLocked, bracketRevealed] = await Promise.all([
     db.query.matchups.findMany(),
@@ -35,8 +35,8 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   if (await isBracketLocked()) {
     return NextResponse.json({ error: "The bracket is locked — picks can no longer be changed." }, { status: 423 });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { postComments, users } from "@/lib/db/schema";
 import { generateId, normalizeDisplayName } from "@/lib/utils";
 import { asc, eq } from "drizzle-orm";
@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
 const MAX_BODY_LENGTH = 1000;
 
 export async function GET(_req: NextRequest, { params }: { params: { blockId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { error } = await requireAuth();
+  if (error) return error;
 
   const rows = await db
     .select({
@@ -38,11 +38,16 @@ export async function GET(_req: NextRequest, { params }: { params: { blockId: st
 }
 
 export async function POST(req: NextRequest, { params }: { params: { blockId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
-  const { body } = (await req.json()) as { body?: string };
-  const trimmed = body?.trim() ?? "";
+  let parsed: { body?: string };
+  try {
+    parsed = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const trimmed = parsed.body?.trim() ?? "";
   if (!trimmed) return NextResponse.json({ error: "Comment can't be empty." }, { status: 400 });
   if (trimmed.length > MAX_BODY_LENGTH) {
     return NextResponse.json({ error: `Keep it under ${MAX_BODY_LENGTH} characters.` }, { status: 400 });

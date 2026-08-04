@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { userPicks, users } from "@/lib/db/schema";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { isBracketLocked } from "@/lib/settings";
 import { eq } from "drizzle-orm";
 
@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 // locked — brackets are secret from other players until then, matching the
 // personal /api/bracket route's own lock rule for edits.
 export async function GET(_req: NextRequest, { params }: { params: { userId: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { error } = await requireAuth();
+  if (error) return error;
 
   if (!(await isBracketLocked())) {
     return NextResponse.json({ error: "Brackets are secret until the pool is locked." }, { status: 403 });

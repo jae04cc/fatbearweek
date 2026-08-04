@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { hashPassword } from "@/lib/password";
 import { normalizeDisplayName, isValidDisplayName } from "@/lib/utils";
 import { eq } from "drizzle-orm";
@@ -9,8 +9,8 @@ import { eq } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   try {
     const { displayName, password } = (await req.json()) as {

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { postComments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   const comment = await db.query.postComments.findFirst({ where: eq(postComments.id, params.id) });
   if (!comment) return NextResponse.json({ error: "Comment not found" }, { status: 404 });

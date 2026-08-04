@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { resolveUploadPath, contentTypeForFilename } from "@/lib/upload";
 
 const SAFE_FILENAME = /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)$/;
@@ -9,8 +9,8 @@ export async function GET(_req: NextRequest, { params }: { params: { filename: s
   // Uploaded bear/announcement photos are pool content — behind login like
   // everything else. Browsers send the session cookie with <img> requests, so
   // this is transparent to logged-in users and blocks anonymous hot-linking.
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { error } = await requireAuth();
+  if (error) return error;
 
   if (!SAFE_FILENAME.test(params.filename)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

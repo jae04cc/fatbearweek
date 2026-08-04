@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { requireAuth } from "@/lib/adminGuard";
 import { postComments } from "@/lib/db/schema";
 import { getHomeContent, getPaymentInfo, isBracketLocked } from "@/lib/settings";
 import { count } from "drizzle-orm";
@@ -8,8 +8,8 @@ import { count } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { error } = await requireAuth();
+  if (error) return error;
 
   const [blocks, paymentInfo, bracketLocked, allUsers, commentCountRows] = await Promise.all([
     getHomeContent(),
