@@ -4,10 +4,21 @@ import { users } from "@/lib/db/schema";
 import { getSignupCode } from "@/lib/settings";
 import { hashPassword } from "@/lib/password";
 import { generateId, normalizeDisplayName, isValidUsername, isValidDisplayName, isReservedUsername } from "@/lib/utils";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
+    // The invite code is the only thing gating account creation, so throttle
+    // guesses: 10 attempts per 10 minutes per IP.
+    const limit = rateLimit(`signup:${clientIp(req.headers)}`, 10, 10 * 60_000);
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait a bit and try again." },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } }
+      );
+    }
+
     const { username, password, displayName, code } = (await req.json()) as {
       username?: string;
       password?: string;

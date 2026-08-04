@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { appSettings, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { verifyPassword } from "@/lib/password";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 // ---------------------------------------------------------------------------
 // Type augmentation — adds `id`, `isAdmin`, `displayName` to the session user
@@ -55,10 +56,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth(async () => {
           username: { label: "Username", type: "text" },
           password: { label: "Password", type: "password" },
         },
-        async authorize(credentials) {
+        async authorize(credentials, request) {
           const username = credentials?.username as string | undefined;
           const password = credentials?.password as string | undefined;
           if (!username || !password) return null;
+
+          // Throttle password guessing: 10 tries per 5 minutes per IP. Returning
+          // null here surfaces as a normal "invalid credentials" to the client,
+          // so an attacker can't distinguish a lockout from a wrong password.
+          const headers = request?.headers ?? new Headers();
+          if (!rateLimit(`login:${clientIp(headers)}`, 10, 5 * 60_000).ok) return null;
 
           const user = await db.query.users.findFirst({
             // Usernames are stored lowercase — logins are case-insensitive
