@@ -112,9 +112,17 @@ describe("buildBracketTopology", () => {
     expect(() => buildBracketTopology(bad)).toThrow();
   });
 
-  it("rejects fewer than 12 bears", () => {
+  it("rejects the wrong number of bye bears", () => {
     const bad = validAssignment();
     bad.round2Byes = bad.round2Byes.slice(0, 3);
+    expect(() => buildBracketTopology(bad)).toThrow();
+  });
+
+  it("rejects a bye slot double-booked to the same position", () => {
+    // Two byes on position 1 and none on position 4 — the counts still add up
+    // to 4, so only the position-coverage check catches this.
+    const bad = validAssignment();
+    bad.round2Byes[3].position = 1;
     expect(() => buildBracketTopology(bad)).toThrow();
   });
 });
