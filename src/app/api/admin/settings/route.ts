@@ -32,6 +32,11 @@ export async function PUT(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
+  // `null` and bare scalars are valid JSON, so they survive the parse above and
+  // would only blow up on destructuring — check the shape, not just parseability.
+  if (typeof body !== "object" || body === null) {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const { bracketLocked, signupCode, bearsRevealed, bracketRevealed } = body;
 
   if (bracketLocked !== undefined) {

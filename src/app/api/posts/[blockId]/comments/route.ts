@@ -47,6 +47,11 @@ export async function POST(req: NextRequest, { params }: { params: { blockId: st
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
+  // `null` and bare scalars parse fine as JSON but have no `.body` — guard the
+  // shape so a malformed payload is a 400, not a 500.
+  if (typeof parsed !== "object" || parsed === null) {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const trimmed = parsed.body?.trim() ?? "";
   if (!trimmed) return NextResponse.json({ error: "Comment can't be empty." }, { status: 400 });
   if (trimmed.length > MAX_BODY_LENGTH) {
