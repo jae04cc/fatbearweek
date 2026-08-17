@@ -63,23 +63,32 @@ export async function PUT(req: NextRequest) {
     const now = new Date();
     const entries = Object.entries(submitted);
 
-    // Delete-then-insert must be atomic: without a transaction, a crash between
-    // the two statements would leave the bracket wiped with nothing written
-    // back. The transaction makes it all-or-nothing.
-    await db.transaction(async (tx) => {
-      await tx.delete(userPicks).where(eq(userPicks.userId, session.user.id));
-      if (entries.length > 0) {
-        await tx.insert(userPicks).values(
-          entries.map(([matchupId, pickedBearId]) => ({
-            id: generateId(),
-            userId: session.user.id,
-            matchupId,
-            pickedBearId,
-            updatedAt: now,
-          }))
-        );
-      }
-    });
+    // Delete-then-insert must be atomic: without that, a crash between the two
+    // statements would leave the bracket wiped with nothing written back.
+    //
+    // Deliberately `db.batch()` and NOT `db.transaction()`. @libsql/client
+    // drops its cached connection inside transaction() and lazily opens a new
+    // one, which silently resets every per-connection PRAGMA — busy_timeout
+    // falls back to 0 and synchronous to FULL for the rest of the process (see
+    // lib/db/index.ts). That would defeat the 5s lock-wait exactly when it
+    // matters most: concurrent bracket saves. batch() is equally atomic (a
+    // failed statement rolls the whole batch back) and keeps the connection.
+    await db.batch([
+      db.delete(userPicks).where(eq(userPicks.userId, session.user.id)),
+      ...(entries.length > 0
+        ? [
+            db.insert(userPicks).values(
+              entries.map(([matchupId, pickedBearId]) => ({
+                id: generateId(),
+                userId: session.user.id,
+                matchupId,
+                pickedBearId,
+                updatedAt: now,
+              }))
+            ),
+          ]
+        : []),
+    ]);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

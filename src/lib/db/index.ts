@@ -37,6 +37,13 @@ export async function runMigrations() {
   //    rather than immediately failing with "database is locked".
   //  - synchronous=NORMAL is the standard, safe durability/speed balance under
   //    WAL (a crash can lose the last transaction, never corrupt the file).
+  //
+  // IMPORTANT: busy_timeout and synchronous are per-CONNECTION, and
+  // @libsql/client discards its cached connection inside `db.transaction()`,
+  // lazily reopening one with stock defaults — which silently reverts both for
+  // the rest of the process. Use `db.batch()` (equally atomic, keeps the
+  // connection) instead of `db.transaction()`. journal_mode is exempt: WAL is
+  // a property of the database file, not the connection.
   await client.execute("PRAGMA journal_mode = WAL");
   await client.execute("PRAGMA busy_timeout = 5000");
   await client.execute("PRAGMA synchronous = NORMAL");
