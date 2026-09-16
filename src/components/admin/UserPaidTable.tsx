@@ -1,12 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useEffect } from "react";
+import { cn } from "@/lib/utils";
 import type { User } from "@/lib/db/schema";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { Trash2, KeyRound } from "lucide-react";
+import { Trash2, KeyRound, ShieldPlus, ShieldMinus, MoreVertical, X } from "lucide-react";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 type SafeUser = Omit<User, "passwordHash">;
 
@@ -20,7 +22,6 @@ export function UserPaidTable() {
   // checkbox also visually disabled/flashed the unrelated promote button.
   const [busyPaidId, setBusyPaidId] = useState<string | null>(null);
   const [busyRoleId, setBusyRoleId] = useState<string | null>(null);
-  const [resetId, setResetId] = useState<string | null>(null);
 
   const load = () => {
     fetch("/api/admin/users")
@@ -143,15 +144,9 @@ export function UserPaidTable() {
             user={user}
             busyPaid={busyPaidId === user.id}
             busyRole={busyRoleId === user.id}
-            resetting={resetId === user.id}
             onTogglePaid={(hasPaid) => handlePaidToggle(user.id, hasPaid)}
             onToggleRole={() => handleRoleToggle(user.id, !user.isAdmin)}
-            onStartReset={() => setResetId(user.id)}
-            onCancelReset={() => setResetId(null)}
-            onSubmitReset={async (password) => {
-              await patchUser(user.id, { password });
-              setResetId(null);
-            }}
+            onSubmitReset={(password) => patchUser(user.id, { password })}
             onDelete={() => handleDelete(user.id)}
           />
         ))}
@@ -164,35 +159,23 @@ function UserRow({
   user,
   busyPaid,
   busyRole,
-  resetting,
   onTogglePaid,
   onToggleRole,
-  onStartReset,
-  onCancelReset,
   onSubmitReset,
   onDelete,
 }: {
   user: SafeUser;
   busyPaid: boolean;
   busyRole: boolean;
-  resetting: boolean;
   onTogglePaid: (hasPaid: boolean) => void;
   onToggleRole: () => void;
-  onStartReset: () => void;
-  onCancelReset: () => void;
   onSubmitReset: (password: string) => Promise<void>;
   onDelete: () => void;
 }) {
-  const [newPassword, setNewPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!newPassword) return;
-    setSubmitting(true);
-    await onSubmitReset(newPassword);
-    setSubmitting(false);
-    setNewPassword("");
-  };
+  // All the rarely-used, name-crowding actions (promote/demote, reset password,
+  // remove) live behind this kebab in a popup, leaving only the paid checkbox
+  // inline so the row stays readable even with long names.
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <Card>
@@ -218,39 +201,172 @@ function UserRow({
               />
             </label>
           )}
-          {!user.isBootstrap && (
-            <Button size="sm" variant="secondary" disabled={busyRole} onClick={onToggleRole}>
-              {user.isAdmin ? "Demote" : "Promote"}
-            </Button>
-          )}
-          <Button size="sm" variant="secondary" onClick={onStartReset} title="Reset password">
-            <KeyRound size={14} />
-          </Button>
-          {!user.isBootstrap && (
-            <Button size="sm" variant="danger" onClick={onDelete}>
-              <Trash2 size={14} />
-            </Button>
-          )}
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Manage user"
+            aria-haspopup="dialog"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-neutral-400 transition-colors hover:bg-white/5 active:scale-95"
+          >
+            <MoreVertical size={18} />
+          </button>
+        </div>
+      </CardBody>
+
+      {menuOpen && (
+        <UserActionsPopup
+          user={user}
+          busyRole={busyRole}
+          onToggleRole={onToggleRole}
+          onSubmitReset={onSubmitReset}
+          onDelete={onDelete}
+          onClose={() => setMenuOpen(false)}
+        />
+      )}
+    </Card>
+  );
+}
+
+function UserActionsPopup({
+  user,
+  busyRole,
+  onToggleRole,
+  onSubmitReset,
+  onDelete,
+  onClose,
+}: {
+  user: SafeUser;
+  busyRole: boolean;
+  onToggleRole: () => void;
+  onSubmitReset: (password: string) => Promise<void>;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  const [resetting, setResetting] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  useScrollLock();
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const handleReset = async () => {
+    if (!newPassword) return;
+    setSubmitting(true);
+    await onSubmitReset(newPassword);
+    setSubmitting(false);
+    onClose();
+  };
+
+  const name = user.displayName ?? user.username;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Tapping the scrim (anywhere outside the card) closes the popup. */}
+      <div className="absolute inset-x-0 -inset-y-full bg-black/85" onClick={onClose} />
+      <div className="relative flex w-full max-w-xs flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
+        <div className="flex items-center justify-between gap-3 px-5 py-4">
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-bold text-neutral-50">{name}</h2>
+            <p className="truncate text-xs text-neutral-500">@{user.username}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-lg p-1.5 text-neutral-400"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        {resetting && (
-          <div className="flex items-center gap-2 border-t border-white/10 pt-3">
+        {resetting ? (
+          <div className="flex flex-col gap-2 border-t border-white/10 px-5 py-4">
             <Input
               type="password"
               placeholder="New password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="flex-1"
+              autoFocus
             />
-            <Button size="sm" onClick={handleSubmit} loading={submitting}>
-              Set
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onCancelReset}>
-              Cancel
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleReset} loading={submitting} className="flex-1">
+                Set password
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setResetting(false);
+                  setNewPassword("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col border-t border-white/10 py-1">
+            {!user.isBootstrap && (
+              <ActionItem
+                icon={user.isAdmin ? <ShieldMinus size={16} /> : <ShieldPlus size={16} />}
+                label={user.isAdmin ? "Remove admin" : "Make admin"}
+                disabled={busyRole}
+                onClick={() => {
+                  onToggleRole();
+                  onClose();
+                }}
+              />
+            )}
+            <ActionItem icon={<KeyRound size={16} />} label="Reset password" onClick={() => setResetting(true)} />
+            {!user.isBootstrap && (
+              <ActionItem
+                icon={<Trash2 size={16} />}
+                label="Remove user"
+                danger
+                onClick={() => {
+                  onDelete();
+                  onClose();
+                }}
+              />
+            )}
           </div>
         )}
-      </CardBody>
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+function ActionItem({
+  icon,
+  label,
+  onClick,
+  disabled,
+  danger,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex items-center gap-3 px-5 py-3 text-left text-sm font-medium transition-colors disabled:opacity-50",
+        danger ? "text-danger hover:bg-danger/10" : "text-neutral-200 hover:bg-white/5"
+      )}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
