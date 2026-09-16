@@ -8,17 +8,18 @@ const ALLOWED_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
+  "image/gif": "gif",
 };
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB
+const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function saveUpload(file: File, prefix: string): Promise<string> {
   const ext = ALLOWED_TYPES[file.type];
   if (!ext) {
-    throw new Error("Unsupported image type. Use JPEG, PNG, or WebP.");
+    throw new Error("Unsupported image type. Use JPEG, PNG, GIF, or WebP.");
   }
   if (file.size > MAX_BYTES) {
-    throw new Error("Image is too large (max 8MB).");
+    throw new Error("Image is too large (max 10MB).");
   }
 
   await fs.mkdir(UPLOADS_DIR, { recursive: true });
@@ -46,6 +47,7 @@ const CONTENT_TYPES: Record<string, string> = {
   jpeg: "image/jpeg",
   png: "image/png",
   webp: "image/webp",
+  gif: "image/gif",
 };
 
 export function contentTypeForFilename(filename: string): string {

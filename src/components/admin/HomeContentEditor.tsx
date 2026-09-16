@@ -254,7 +254,7 @@ function BlockEditor({
           <input
             ref={inlineFileInput}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             className="hidden"
             onChange={(e) => {
               insertInlineImage(e.target.files?.[0]);
@@ -294,7 +294,7 @@ function BlockEditor({
         <input
           ref={coverFileInput}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/gif"
           className="hidden"
           onChange={(e) => onCoverFile(e.target.files?.[0])}
         />

@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import { requireAuth } from "@/lib/adminGuard";
 import { resolveUploadPath, contentTypeForFilename } from "@/lib/upload";
 
-const SAFE_FILENAME = /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)$/;
+const SAFE_FILENAME = /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|gif)$/;
 
 export async function GET(_req: NextRequest, { params }: { params: { filename: string } }) {
   // Uploaded bear/announcement photos are pool content — behind login like
