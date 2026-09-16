@@ -138,11 +138,12 @@ function SectionDivider() {
   );
 }
 
-// Collapsed by default, to a fixed height that's the same for every post
-// regardless of whether it has a cover image or how long the body runs — so
-// the feed reads as an even stack of previews rather than a wall of text.
-// The preview is faded out with a mask rather than a gradient overlay, so it
-// works without having to match the card's translucent background colour.
+// A title image (when present) always renders at full size — it sits outside
+// the collapse container, so only the text body below it expands and collapses.
+// The text is collapsed by default to a fixed height regardless of how long the
+// body runs, so the feed reads as an even stack of previews rather than a wall
+// of text. The preview is faded out with a mask rather than a gradient overlay,
+// so it works without having to match the card's translucent background colour.
 function AnnouncementCard({
   block,
   commentCount,
@@ -156,15 +157,15 @@ function AnnouncementCard({
 
   return (
     <Card>
+      {block.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={block.imageUrl}
+          alt=""
+          className="max-h-80 w-full shrink-0 rounded-t-2xl object-cover"
+        />
+      )}
       <div className={cn("flex flex-col overflow-hidden", !open && "h-36")}>
-        {block.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={block.imageUrl}
-            alt=""
-            className={cn("w-full shrink-0 rounded-t-2xl object-cover", open ? "max-h-80" : "h-20")}
-          />
-        )}
         <div
           className={cn(
             "min-h-0 flex-1 px-4 py-3",
