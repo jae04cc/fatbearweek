@@ -21,7 +21,10 @@ const nextConfig = {
   experimental: {
     // Runs src/instrumentation.ts at server startup (used for DB migrations)
     instrumentationHook: true,
-    serverComponentsExternalPackages: ["@libsql/client"],
+    // sharp ships a native binary — keep it external so it's required from
+    // node_modules at runtime (and traced into the standalone output) rather
+    // than bundled by webpack.
+    serverComponentsExternalPackages: ["@libsql/client", "sharp"],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

@@ -34,6 +34,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
+# sharp's native module + its libvips binary — copied explicitly so image
+# conversion works at runtime regardless of Next's file tracing. The @img
+# packages hold the platform-specific prebuilt binaries.
+COPY --from=builder /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder /app/node_modules/@img ./node_modules/@img
+
 # Data volume — holds both the SQLite database and uploaded bear photos
 RUN mkdir -p /data/uploads
 VOLUME ["/data"]
