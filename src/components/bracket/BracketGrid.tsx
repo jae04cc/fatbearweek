@@ -2,26 +2,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { resolveContestants, type ResolvedMatchup } from "@/lib/bracket/topology";
+import { bracketHasByes, bracketTemplateRows, boxGridRow, ROUND_LABELS } from "@/lib/bracket/layout";
 import { BracketMatchBox, type ResultStatus, type MatchResult } from "@/components/bracket/BracketMatchBox";
-
-const ROUND_LABELS: Record<number, string> = {
-  1: "Round 1",
-  2: "Round 2",
-  3: "Final Four",
-  4: "Championship",
-};
-
-// Grid row 1 is the header row; rows 2-5 are the 4 base units that Round 1
-// and Round 2 sit in 1:1. Round 3 merges pairs of Round 2 rows, and
-// Round 4 merges both Round 3 rows — the classic bracket "elbow" shape,
-// expressed as CSS grid-row spans instead of hand-computed pixel math.
-function baseRow(position: number) {
-  return `${position + 1} / ${position + 2}`;
-}
-function mergedRow(position: number) {
-  return `${2 * position} / ${2 * position + 2}`;
-}
-const FINAL_ROW = "2 / 6";
+import { CompactRounds } from "@/components/bracket/CompactRounds";
+import { MergeConnector } from "@/components/bracket/BracketConnectors";
 
 // A box shows two contestants that arrived via independent storylines (one
 // per feeder matchup, when it has one) — only ONE of them is this user's
@@ -82,34 +66,9 @@ function computeMatchResults(
   return resultById;
 }
 
-// An elbow connector: two horizontal stubs (one from each feeder matchup,
-// at their vertical centers within this merged span) joined by a vertical
-// bar, then one horizontal line continuing into the next matchup — the
-// classic bracket "these two feed into that one" shape, instead of a
-// floating vertical bar with no visible link to the boxes on either side.
-//
-// `feederOffsetPx` accounts for feeder boxes that are themselves shifted off
-// their row's natural center (Round 2's boxes are shifted up 25px to line up
-// with the Round 1 connector — see below) so the incoming stubs still land on
-// the feeders' *actual* rendered centers. The outgoing stub always exits at
-// the true 50% mark, matching the next round's box, which is never shifted.
-function MergeConnector({ feederOffsetPx = 0 }: { feederOffsetPx?: number }) {
-  const topStub = `calc(25% - ${feederOffsetPx}px)`;
-  const bottomStub = `calc(75% - ${feederOffsetPx}px)`;
-  return (
-    <div className="relative h-full w-full">
-      <div className="absolute left-0 h-0.5 w-1/2 -translate-y-1/2 bg-white/20" style={{ top: topStub }} />
-      <div className="absolute left-0 h-0.5 w-1/2 -translate-y-1/2 bg-white/20" style={{ top: bottomStub }} />
-      <div className="absolute left-1/2 w-0.5 -translate-x-1/2 bg-white/20" style={{ top: topStub, height: "50%" }} />
-      <div className="absolute right-0 h-0.5 w-1/2 -translate-y-1/2 bg-white/20" style={{ top: "50%" }} />
-    </div>
-  );
-}
-
 // Columns: 1=Round1, 2=gutter (Round1→Round2 connector),
 // 3=Round2, 4=gutter (→Final Four), 5=Final Four, 6=gutter (→Championship), 7=Championship
 const GRID_TEMPLATE_COLUMNS = "280px 28px 280px 28px 280px 28px 280px";
-const GRID_TEMPLATE_ROWS = "auto repeat(4, minmax(128px, auto))";
 
 export function BracketGrid({
   matchups,
@@ -126,7 +85,7 @@ export function BracketGrid({
   onPick: (matchupId: string, bearId: string) => void;
   onSelectBear: (bear: Bear) => void;
 }) {
-  const scrollRef = useRef<HTMLElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Lets a plain vertical mouse wheel scroll the bracket sideways (desktop
   // mice have no horizontal wheel) — without this, mouse users would have no
@@ -153,17 +112,55 @@ export function BracketGrid({
   );
   const byRound = (round: number) => matchups.filter((m) => m.round === round).sort((a, b) => a.position - b.position);
 
+  // 4 Round 1 matchups = a 12-bear bracket with byes; 8 = a flat 16-bear one.
+  const round1Count = byRound(1).length;
+  const hasByes = bracketHasByes(round1Count);
+  const gridRow = (round: number, position: number) => boxGridRow(round, position, hasByes ? "packed" : "spread");
+  // Round 2's bye boxes are shifted up so the Round 1 winner lands on the
+  // connector line; a flat bracket's Round 2 boxes are centered like any other.
+  const r2Shift = hasByes ? 25 : 0;
+
+  // One box, placed by whichever layout is rendering it — the desktop grid
+  // below, or the compact per-round stacks on a phone.
+  const renderBox = (m: Matchup) => {
+    const r = resolvedById.get(m.id);
+    return (
+      <BracketMatchBox
+        bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
+        bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
+        picked={picks[m.id]}
+        disabled={disabled}
+        onPick={(bearId) => onPick(m.id, bearId)}
+        onSelectBear={onSelectBear}
+        matchResult={resultById.get(m.id)}
+      />
+    );
+  };
+
+  // A 12-bear bracket is packed at every width, so it renders one grid; a
+  // 16-bear one swaps in the packed phone layout below md.
+  const phoneLayout = !hasByes;
+
   return (
-    <main ref={scrollRef} className="no-scrollbar flex-1 overflow-x-auto pb-4">
+    <main className="flex-1">
+      {phoneLayout && (
+        <div className="md:hidden">
+          <CompactRounds matchups={matchups} renderBox={renderBox} />
+        </div>
+      )}
+
       {/* An explicit trailing spacer <div>, not padding on the scroll
           container or the grid — padding at the far edge of horizontally
           scrolled content is unreliable across browsers (it can get
           clipped once content overflows), but a real element always
           counts toward the scrollable width. */}
-      <div className="flex">
+      <div
+        ref={scrollRef}
+        className={`no-scrollbar overflow-x-auto pb-4 ${phoneLayout ? "hidden md:flex" : "flex"}`}
+      >
         <div
           className="grid gap-x-3 gap-y-8 pl-5"
-          style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gridTemplateRows: GRID_TEMPLATE_ROWS }}
+          style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gridTemplateRows: bracketTemplateRows(round1Count) }}
         >
           {/* Column headers */}
           <div style={{ gridColumn: 1, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
@@ -180,105 +177,66 @@ export function BracketGrid({
           </div>
 
           {/* Round 1 */}
-          {byRound(1).map((m) => {
-            const r = resolvedById.get(m.id);
-            return (
-              <div key={m.id} style={{ gridColumn: 1, gridRow: baseRow(m.position) }} className="flex items-center">
-                <BracketMatchBox
-                  bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
-                  bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
-                  picked={picks[m.id]}
-                  disabled={disabled}
-                  onPick={(bearId) => onPick(m.id, bearId)}
-                  onSelectBear={onSelectBear}
-                  matchResult={resultById.get(m.id)}
-                />
-              </div>
-            );
-          })}
-
-          {/* Connector: a single straight line from Round 1's box-center to
-              Round 2's box-center. Round 2's box itself is shifted up (see
-              below) so that line lands on its BOTTOM row — the "blank spot"
-              Round 1's winner fills. That shift leaves the TOP row (the bye
-              bear, always bearA for Round 2) sitting above the line, clearly
-              apart from it — no label needed, the geometry says it. */}
-          {byRound(2).map((m) => (
-            <div key={`line-${m.id}`} style={{ gridColumn: 2, gridRow: baseRow(m.position) }} className="relative">
-              <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-white/20" />
+          {byRound(1).map((m) => (
+            <div key={m.id} style={{ gridColumn: 1, gridRow: gridRow(1, m.position) }} className="flex items-center">
+              {renderBox(m)}
             </div>
           ))}
 
-          {/* Round 2 — shifted up so its bottom row (the Round 1 feed) lines
-              up with the connector; the top row (bye) sits above it, offset. */}
-          {byRound(2).map((m) => {
-            const r = resolvedById.get(m.id);
-            return (
-              <div key={m.id} style={{ gridColumn: 3, gridRow: baseRow(m.position) }} className="flex items-center">
-                <div className="w-full -translate-y-[25px]">
-                  <BracketMatchBox
-                    bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
-                    bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
-                    picked={picks[m.id]}
-                    disabled={disabled}
-                    onPick={(bearId) => onPick(m.id, bearId)}
-                  onSelectBear={onSelectBear}
-                    matchResult={resultById.get(m.id)}
-                  />
-                </div>
+          {/* Connector: Round 1 → Round 2. In a bye bracket it's a single
+              straight line into Round 2's shifted box (the bye sits above it);
+              in a flat 16-bear bracket it's an elbow merging the two Round 1
+              winners, like every other round. */}
+          {byRound(2).map((m) =>
+            hasByes ? (
+              <div key={`line-${m.id}`} style={{ gridColumn: 2, gridRow: gridRow(2, m.position) }} className="relative">
+                <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-white/20" />
               </div>
-            );
-          })}
+            ) : (
+              <div key={`line-${m.id}`} style={{ gridColumn: 2, gridRow: gridRow(2, m.position) }}>
+                <MergeConnector />
+              </div>
+            )
+          )}
+
+          {/* Round 2 — in a bye bracket, shifted up so its bottom row (the
+              Round 1 feed) lines up with the connector; in a flat bracket it's
+              centered in its two-row span like any other round. */}
+          {byRound(2).map((m) => (
+            <div key={m.id} style={{ gridColumn: 3, gridRow: gridRow(2, m.position) }} className="flex items-center">
+              <div className="w-full" style={{ transform: r2Shift ? `translateY(-${r2Shift}px)` : undefined }}>
+                {renderBox(m)}
+              </div>
+            </div>
+          ))}
 
           {/* Connector: Round 2 → Final Four — an actual elbow flowing from
               each of the two feeder matchups into the next one, not just a
               floating vertical bar. */}
           {[1, 2].map((position) => (
-            <div key={position} style={{ gridColumn: 4, gridRow: mergedRow(position) }}>
-              <MergeConnector feederOffsetPx={25} />
+            <div key={position} style={{ gridColumn: 4, gridRow: gridRow(3, position) }}>
+              <MergeConnector feederOffsetPx={r2Shift} />
             </div>
           ))}
 
           {/* Final Four */}
-          {byRound(3).map((m) => {
-            const r = resolvedById.get(m.id);
-            return (
-              <div key={m.id} style={{ gridColumn: 5, gridRow: mergedRow(m.position) }} className="flex items-center">
-                <BracketMatchBox
-                  bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
-                  bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
-                  picked={picks[m.id]}
-                  disabled={disabled}
-                  onPick={(bearId) => onPick(m.id, bearId)}
-                  onSelectBear={onSelectBear}
-                  matchResult={resultById.get(m.id)}
-                />
-              </div>
-            );
-          })}
+          {byRound(3).map((m) => (
+            <div key={m.id} style={{ gridColumn: 5, gridRow: gridRow(3, m.position) }} className="flex items-center">
+              {renderBox(m)}
+            </div>
+          ))}
 
           {/* Connector: Final Four → Championship */}
-          <div style={{ gridColumn: 6, gridRow: FINAL_ROW }}>
+          <div style={{ gridColumn: 6, gridRow: gridRow(4, 1) }}>
             <MergeConnector />
           </div>
 
           {/* Championship */}
-          {byRound(4).map((m) => {
-            const r = resolvedById.get(m.id);
-            return (
-              <div key={m.id} style={{ gridColumn: 7, gridRow: FINAL_ROW }} className="flex items-center">
-                <BracketMatchBox
-                  bearA={r?.bearAId ? bearsById.get(r.bearAId) : undefined}
-                  bearB={r?.bearBId ? bearsById.get(r.bearBId) : undefined}
-                  picked={picks[m.id]}
-                  disabled={disabled}
-                  onPick={(bearId) => onPick(m.id, bearId)}
-                  onSelectBear={onSelectBear}
-                  matchResult={resultById.get(m.id)}
-                />
-              </div>
-            );
-          })}
+          {byRound(4).map((m) => (
+            <div key={m.id} style={{ gridColumn: 7, gridRow: gridRow(4, 1) }} className="flex items-center">
+              {renderBox(m)}
+            </div>
+          ))}
         </div>
         <div className="w-5 shrink-0" aria-hidden="true" />
       </div>

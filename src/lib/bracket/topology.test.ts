@@ -26,6 +26,18 @@ function validAssignment(): BracketAssignment {
   };
 }
 
+// A complete, valid 16-bear assignment: 16 bears across 8 Round 1 matchups and
+// no byes.
+function validAssignment16(): BracketAssignment {
+  return {
+    round1: Array.from({ length: 8 }, (_, i) => ({
+      position: i + 1,
+      bearAId: `b${i * 2 + 1}`,
+      bearBId: `b${i * 2 + 2}`,
+    })),
+  };
+}
+
 // The matchup shape resolveContestants/pruneInvalidPicks actually read. Built by
 // hand so a test states its bracket explicitly rather than depending on a seed.
 type M = {
@@ -108,13 +120,13 @@ describe("buildBracketTopology", () => {
 
   it("rejects a bear assigned to two slots", () => {
     const bad = validAssignment();
-    bad.round2Byes[0].bearId = "b1"; // b1 is already in Round 1 position 1
+    bad.round2Byes![0].bearId = "b1"; // b1 is already in Round 1 position 1
     expect(() => buildBracketTopology(bad)).toThrow();
   });
 
   it("rejects the wrong number of bye bears", () => {
     const bad = validAssignment();
-    bad.round2Byes = bad.round2Byes.slice(0, 3);
+    bad.round2Byes = bad.round2Byes!.slice(0, 3);
     expect(() => buildBracketTopology(bad)).toThrow();
   });
 
@@ -122,7 +134,43 @@ describe("buildBracketTopology", () => {
     // Two byes on position 1 and none on position 4 — the counts still add up
     // to 4, so only the position-coverage check catches this.
     const bad = validAssignment();
-    bad.round2Byes[3].position = 1;
+    bad.round2Byes![3].position = 1;
+    expect(() => buildBracketTopology(bad)).toThrow();
+  });
+
+  // --- 16-bear (no-bye) bracket ---
+
+  it("produces the 15-matchup shape for 16 bears (8 + 4 + 2 + 1)", () => {
+    const slots = buildBracketTopology(validAssignment16());
+    expect(slots).toHaveLength(15);
+    expect(slots.filter((s) => s.round === 1)).toHaveLength(8);
+    expect(slots.filter((s) => s.round === 2)).toHaveLength(4);
+    expect(slots.filter((s) => s.round === 3)).toHaveLength(2);
+    expect(slots.filter((s) => s.round === 4)).toHaveLength(1);
+  });
+
+  it("pairs Round 1 winners into Round 2 with no byes", () => {
+    const slots = buildBracketTopology(validAssignment16());
+    const r2p1 = slots.find((s) => s.round === 2 && s.position === 1)!;
+    expect(r2p1.bearAId).toBeUndefined();
+    expect(r2p1.bearBId).toBeUndefined();
+    expect(r2p1.feederA).toEqual({ round: 1, position: 1 });
+    expect(r2p1.feederB).toEqual({ round: 1, position: 2 });
+
+    const r2p4 = slots.find((s) => s.round === 2 && s.position === 4)!;
+    expect(r2p4.feederA).toEqual({ round: 1, position: 7 });
+    expect(r2p4.feederB).toEqual({ round: 1, position: 8 });
+  });
+
+  it("rejects a 16-bear bracket that still has byes assigned", () => {
+    const bad = validAssignment16();
+    bad.round2Byes = [{ position: 1, bearId: "bye" }];
+    expect(() => buildBracketTopology(bad)).toThrow();
+  });
+
+  it("rejects the wrong number of Round 1 matchups for a no-bye bracket", () => {
+    const bad = validAssignment16();
+    bad.round1 = bad.round1.slice(0, 7);
     expect(() => buildBracketTopology(bad)).toThrow();
   });
 });

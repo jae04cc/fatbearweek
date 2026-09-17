@@ -43,6 +43,8 @@ export function BearEditor() {
   useEffect(load, []);
 
   const byeCount = bears.filter((b) => b.isBye).length;
+  // Two valid rosters: 12 bears with 4 byes, or 16 bears with none.
+  const validRoster = (bears.length === 12 && byeCount === 4) || (bears.length === 16 && byeCount === 0);
 
   const updateDraft = (id: string, patch: Partial<Draft>) => {
     setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
@@ -107,9 +109,14 @@ export function BearEditor() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-neutral-400">
-        <Badge variant={bears.length === 12 ? "success" : "warning"}>{bears.length}/12 bears</Badge>
-        <Badge variant={byeCount === 4 ? "success" : "warning"}>{byeCount}/4 byes</Badge>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-2 text-sm text-neutral-400">
+          <Badge variant={validRoster ? "success" : "warning"}>{bears.length} bears</Badge>
+          <Badge variant={validRoster ? "success" : "warning"}>{byeCount} byes</Badge>
+        </div>
+        <p className="text-xs text-neutral-500">
+          A valid roster is 12 bears with 4 byes, or 16 bears with no byes.
+        </p>
       </div>
 
       <div className="space-y-3">

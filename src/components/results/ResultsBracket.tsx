@@ -2,6 +2,9 @@
 import { useEffect, useRef } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import { bracketHasByes, bracketTemplateRows, boxGridRow, ROUND_LABELS } from "@/lib/bracket/layout";
+import { CompactRounds } from "@/components/bracket/CompactRounds";
+import { MergeConnector } from "@/components/bracket/BracketConnectors";
 
 // A read-only view of the REAL tournament's progress, shaped like the
 // bracket page but deliberately kept separate from BracketGrid — that
@@ -10,36 +13,8 @@ import { cn } from "@/lib/utils";
 // (which the admin-decide cascade keeps up to date), highlights the real
 // winner once known, and shows what fraction of the pool picked each bear —
 // no picking, no bust logic, just a read-only mirror of reality.
-const ROUND_LABELS: Record<number, string> = {
-  1: "Round 1",
-  2: "Round 2",
-  3: "Final Four",
-  4: "Championship",
-};
-
-function baseRow(position: number) {
-  return `${position + 1} / ${position + 2}`;
-}
-function mergedRow(position: number) {
-  return `${2 * position} / ${2 * position + 2}`;
-}
-const FINAL_ROW = "2 / 6";
-
-function MergeConnector({ feederOffsetPx = 0 }: { feederOffsetPx?: number }) {
-  const topStub = `calc(25% - ${feederOffsetPx}px)`;
-  const bottomStub = `calc(75% - ${feederOffsetPx}px)`;
-  return (
-    <div className="relative h-full w-full">
-      <div className="absolute left-0 h-0.5 w-1/2 -translate-y-1/2 bg-white/20" style={{ top: topStub }} />
-      <div className="absolute left-0 h-0.5 w-1/2 -translate-y-1/2 bg-white/20" style={{ top: bottomStub }} />
-      <div className="absolute left-1/2 w-0.5 -translate-x-1/2 bg-white/20" style={{ top: topStub, height: "50%" }} />
-      <div className="absolute right-0 h-0.5 w-1/2 -translate-y-1/2 bg-white/20" style={{ top: "50%" }} />
-    </div>
-  );
-}
 
 const GRID_TEMPLATE_COLUMNS = "280px 28px 280px 28px 280px 28px 280px";
-const GRID_TEMPLATE_ROWS = "auto repeat(4, minmax(128px, auto))";
 
 function ResultBearRow({
   bear,
@@ -145,7 +120,7 @@ export function ResultsBracket({
   pickStats: Record<string, Record<string, number>>;
   onSelectBear: (bear: Bear) => void;
 }) {
-  const scrollRef = useRef<HTMLElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -163,12 +138,43 @@ export function ResultsBracket({
   const byRound = (round: number) => matchups.filter((m) => m.round === round).sort((a, b) => a.position - b.position);
   const bearFor = (id: string | null) => (id ? bearsById.get(id) : undefined);
 
+  // 4 Round 1 matchups = a 12-bear bracket with byes; 8 = a flat 16-bear one.
+  const round1Count = byRound(1).length;
+  const hasByes = bracketHasByes(round1Count);
+  const gridRow = (round: number, position: number) => boxGridRow(round, position, hasByes ? "packed" : "spread");
+  const r2Shift = hasByes ? 25 : 0;
+
+  // One box, placed by whichever layout is rendering it — the desktop grid
+  // below, or the compact per-round stacks on a phone.
+  const renderBox = (m: Matchup) => (
+    <ResultMatchBox
+      bearA={bearFor(m.bearAId)}
+      bearB={bearFor(m.bearBId)}
+      winnerBearId={m.winnerBearId}
+      pickCounts={pickStats[m.id] ?? {}}
+      onSelectBear={onSelectBear}
+    />
+  );
+
+  // A 12-bear bracket is packed at every width, so it renders one grid; a
+  // 16-bear one swaps in the packed phone layout below md.
+  const phoneLayout = !hasByes;
+
   return (
-    <main ref={scrollRef} className="no-scrollbar w-full overflow-x-auto pb-4">
-      <div className="flex">
+    <main className="w-full">
+      {phoneLayout && (
+        <div className="md:hidden">
+          <CompactRounds matchups={matchups} renderBox={renderBox} />
+        </div>
+      )}
+
+      <div
+        ref={scrollRef}
+        className={cn("no-scrollbar overflow-x-auto pb-4", phoneLayout ? "hidden md:flex" : "flex")}
+      >
         <div
           className="grid gap-x-3 gap-y-8 pl-5"
-          style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gridTemplateRows: GRID_TEMPLATE_ROWS }}
+          style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gridTemplateRows: bracketTemplateRows(round1Count) }}
         >
           <div style={{ gridColumn: 1, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
             {ROUND_LABELS[1]}
@@ -184,68 +190,50 @@ export function ResultsBracket({
           </div>
 
           {byRound(1).map((m) => (
-            <div key={m.id} style={{ gridColumn: 1, gridRow: baseRow(m.position) }} className="flex items-center">
-              <ResultMatchBox
-                bearA={bearFor(m.bearAId)}
-                bearB={bearFor(m.bearBId)}
-                winnerBearId={m.winnerBearId}
-                pickCounts={pickStats[m.id] ?? {}}
-                onSelectBear={onSelectBear}
-              />
+            <div key={m.id} style={{ gridColumn: 1, gridRow: gridRow(1, m.position) }} className="flex items-center">
+              {renderBox(m)}
             </div>
           ))}
 
-          {byRound(2).map((m) => (
-            <div key={`line-${m.id}`} style={{ gridColumn: 2, gridRow: baseRow(m.position) }} className="relative">
-              <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-white/20" />
-            </div>
-          ))}
+          {byRound(2).map((m) =>
+            hasByes ? (
+              <div key={`line-${m.id}`} style={{ gridColumn: 2, gridRow: gridRow(2, m.position) }} className="relative">
+                <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-white/20" />
+              </div>
+            ) : (
+              <div key={`line-${m.id}`} style={{ gridColumn: 2, gridRow: gridRow(2, m.position) }}>
+                <MergeConnector />
+              </div>
+            )
+          )}
 
           {byRound(2).map((m) => (
-            <div key={m.id} style={{ gridColumn: 3, gridRow: baseRow(m.position) }} className="flex items-center">
-              <div className="w-full -translate-y-[25px]">
-                <ResultMatchBox
-                  bearA={bearFor(m.bearAId)}
-                  bearB={bearFor(m.bearBId)}
-                  winnerBearId={m.winnerBearId}
-                  pickCounts={pickStats[m.id] ?? {}}
-                  onSelectBear={onSelectBear}
-                />
+            <div key={m.id} style={{ gridColumn: 3, gridRow: gridRow(2, m.position) }} className="flex items-center">
+              <div className="w-full" style={{ transform: r2Shift ? `translateY(-${r2Shift}px)` : undefined }}>
+                {renderBox(m)}
               </div>
             </div>
           ))}
 
           {[1, 2].map((position) => (
-            <div key={position} style={{ gridColumn: 4, gridRow: mergedRow(position) }}>
-              <MergeConnector feederOffsetPx={25} />
+            <div key={position} style={{ gridColumn: 4, gridRow: gridRow(3, position) }}>
+              <MergeConnector feederOffsetPx={r2Shift} />
             </div>
           ))}
 
           {byRound(3).map((m) => (
-            <div key={m.id} style={{ gridColumn: 5, gridRow: mergedRow(m.position) }} className="flex items-center">
-              <ResultMatchBox
-                bearA={bearFor(m.bearAId)}
-                bearB={bearFor(m.bearBId)}
-                winnerBearId={m.winnerBearId}
-                pickCounts={pickStats[m.id] ?? {}}
-                onSelectBear={onSelectBear}
-              />
+            <div key={m.id} style={{ gridColumn: 5, gridRow: gridRow(3, m.position) }} className="flex items-center">
+              {renderBox(m)}
             </div>
           ))}
 
-          <div style={{ gridColumn: 6, gridRow: FINAL_ROW }}>
+          <div style={{ gridColumn: 6, gridRow: gridRow(4, 1) }}>
             <MergeConnector />
           </div>
 
           {byRound(4).map((m) => (
-            <div key={m.id} style={{ gridColumn: 7, gridRow: FINAL_ROW }} className="flex items-center">
-              <ResultMatchBox
-                bearA={bearFor(m.bearAId)}
-                bearB={bearFor(m.bearBId)}
-                winnerBearId={m.winnerBearId}
-                pickCounts={pickStats[m.id] ?? {}}
-                onSelectBear={onSelectBear}
-              />
+            <div key={m.id} style={{ gridColumn: 7, gridRow: gridRow(4, 1) }} className="flex items-center">
+              {renderBox(m)}
             </div>
           ))}
         </div>

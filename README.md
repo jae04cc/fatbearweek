@@ -17,8 +17,8 @@ The SQLite database is created automatically at `./data/fatbearweek.db` on first
 
 ## Setting up a tournament
 
-1. **Admin → Bears**: add all 12 bears (name, number, short bio, before/after photos). Mark exactly 4 of them as "Has a bye."
-2. **Admin → Setup**: manually assign each Round 1 matchup (pick the two bears facing off) and each Round 2 bye slot (which bye bear faces the winner of which Round 1 matchup) to match the real published NPS bracket exactly, then click "Seed bracket." This generates the 11 real matchups (Round 1 → Championship) — nothing is auto-paired or randomized.
+1. **Admin → Bears**: add the full roster (name, number, short bio, before/after photos). Two shapes are supported: **12 bears with exactly 4 marked "Has a bye,"** or **16 bears with no byes**.
+2. **Admin → Setup**: manually assign each Round 1 matchup (pick the two bears facing off) — plus, for a 12-bear bracket, each Round 2 bye slot (which bye bear faces the winner of which Round 1 matchup) — to match the real published NPS bracket exactly, then click "Seed bracket." This generates the real matchups (11 for 12 bears, 15 for 16) from Round 1 → Championship — nothing is auto-paired or randomized.
 3. Everyone fills out their personal bracket at `/bracket`.
 4. When picks should close, toggle the lock on in **Admin → Lock**.
 5. As real results come in, mark winners inline on `/matchups` (visible to admins) and use "Advance to next round" once every matchup in the round is decided.

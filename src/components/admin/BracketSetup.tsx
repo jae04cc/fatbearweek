@@ -12,13 +12,10 @@ interface Round1Slot {
 export function BracketSetup() {
   const [bears, setBears] = useState<Bear[]>([]);
   const [loading, setLoading] = useState(true);
-  const [round1, setRound1] = useState<Round1Slot[]>([
-    { bearAId: "", bearBId: "" },
-    { bearAId: "", bearBId: "" },
-    { bearAId: "", bearBId: "" },
-    { bearAId: "", bearBId: "" },
-  ]);
-  const [round2Byes, setRound2Byes] = useState<string[]>(["", "", "", ""]);
+  // Slot arrays are sized to the roster once bears load — 4 or 8 Round 1
+  // matchups, and 4 byes (12-bear bracket) or none (16-bear bracket).
+  const [round1, setRound1] = useState<Round1Slot[]>([]);
+  const [round2Byes, setRound2Byes] = useState<string[]>([]);
   const [seeding, setSeeding] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
@@ -27,7 +24,12 @@ export function BracketSetup() {
     fetch("/api/admin/bears")
       .then((r) => r.json())
       .then((data: Bear[]) => {
-        setBears(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setBears(list);
+        const nonBye = list.filter((b) => !b.isBye).length;
+        const byes = list.filter((b) => b.isBye).length;
+        setRound1(Array.from({ length: Math.floor(nonBye / 2) }, () => ({ bearAId: "", bearBId: "" })));
+        setRound2Byes(Array.from({ length: byes }, () => ""));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -35,7 +37,9 @@ export function BracketSetup() {
 
   const nonByeBears = bears.filter((b) => !b.isBye);
   const byeBears = bears.filter((b) => b.isBye);
-  const ready = nonByeBears.length === 8 && byeBears.length === 4;
+  const ready =
+    (nonByeBears.length === 8 && byeBears.length === 4) ||
+    (nonByeBears.length === 16 && byeBears.length === 0);
 
   const handleSeed = async (force: boolean) => {
     setMessage(null);
@@ -114,8 +118,9 @@ export function BracketSetup() {
       <div className="space-y-4">
         <Card>
           <CardBody className="text-sm text-neutral-400">
-            Add all 12 bears first (8 regular + 4 with a bye) in the Bears tab before setting up the bracket.
-            Currently: {nonByeBears.length}/8 regular, {byeBears.length}/4 byes.
+            Add a full roster in the Bears tab before setting up the bracket — either 12 bears (8 regular + 4
+            with a bye) or 16 bears (all regular, no byes).
+            Currently: {nonByeBears.length} regular, {byeBears.length} byes.
           </CardBody>
         </Card>
         {bears.length > 0 && (
@@ -153,22 +158,25 @@ export function BracketSetup() {
         </CardBody>
       </Card>
 
-      <Card>
-        <CardBody className="gap-3">
-          <p className="font-semibold text-neutral-100">Round 2 byes</p>
-          <p className="text-sm text-neutral-400">Which bye bear faces the winner of each Round 1 matchup above.</p>
-          {round2Byes.map((bearId, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="w-24 shrink-0 text-xs text-neutral-500">Winner of #{i + 1} faces</span>
-              <BearSelect
-                bears={byeBears}
-                value={bearId}
-                onChange={(id) => setRound2Byes((prev) => prev.map((b, idx) => (idx === i ? id : b)))}
-              />
-            </div>
-          ))}
-        </CardBody>
-      </Card>
+      {/* Byes only exist in the 12-bear bracket; a 16-bear bracket skips this. */}
+      {byeBears.length > 0 && (
+        <Card>
+          <CardBody className="gap-3">
+            <p className="font-semibold text-neutral-100">Round 2 byes</p>
+            <p className="text-sm text-neutral-400">Which bye bear faces the winner of each Round 1 matchup above.</p>
+            {round2Byes.map((bearId, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="w-24 shrink-0 text-xs text-neutral-500">Winner of #{i + 1} faces</span>
+                <BearSelect
+                  bears={byeBears}
+                  value={bearId}
+                  onChange={(id) => setRound2Byes((prev) => prev.map((b, idx) => (idx === i ? id : b)))}
+                />
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+      )}
 
       <div className="flex gap-2">
         <Button size="sm" onClick={() => handleSeed(false)} loading={seeding}>
