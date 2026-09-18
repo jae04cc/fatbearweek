@@ -2,10 +2,11 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { resolveContestants, type ResolvedMatchup } from "@/lib/bracket/topology";
-import { bracketHasByes, bracketTemplateRows, boxGridRow, ROUND_LABELS } from "@/lib/bracket/layout";
+import { bracketHasByes, bracketTemplateRows, boxGridRow } from "@/lib/bracket/layout";
 import { BracketMatchBox, type ResultStatus, type MatchResult } from "@/components/bracket/BracketMatchBox";
 import { CompactRounds } from "@/components/bracket/CompactRounds";
 import { MergeConnector } from "@/components/bracket/BracketConnectors";
+import { RoundHeading } from "@/components/bracket/RoundHeading";
 
 // A box shows two contestants that arrived via independent storylines (one
 // per feeder matchup, when it has one) — only ONE of them is this user's
@@ -163,18 +164,10 @@ export function BracketGrid({
           style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gridTemplateRows: bracketTemplateRows(round1Count) }}
         >
           {/* Column headers */}
-          <div style={{ gridColumn: 1, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[1]}
-          </div>
-          <div style={{ gridColumn: 3, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[2]}
-          </div>
-          <div style={{ gridColumn: 5, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[3]}
-          </div>
-          <div style={{ gridColumn: 7, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[4]}
-          </div>
+          <RoundHeading round={1} style={{ gridColumn: 1, gridRow: 1 }} />
+          <RoundHeading round={2} style={{ gridColumn: 3, gridRow: 1 }} />
+          <RoundHeading round={3} style={{ gridColumn: 5, gridRow: 1 }} />
+          <RoundHeading round={4} style={{ gridColumn: 7, gridRow: 1 }} />
 
           {/* Round 1 */}
           {byRound(1).map((m) => (

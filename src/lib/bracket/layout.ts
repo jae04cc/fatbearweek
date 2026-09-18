@@ -9,12 +9,22 @@
 // ends up taller than expected grows its row instead of overlapping its
 // neighbour.
 
+import { POINTS_BY_ROUND } from "./topology";
+
 export const ROUND_LABELS: Record<number, string> = {
   1: "Round 1",
   2: "Round 2",
   3: "Final Four",
   4: "Championship",
 };
+
+// "1 pt" / "2 pts" — what one correct pick in that round is worth, shown
+// beside each round's heading so the scoring is visible on the bracket
+// itself instead of only in the rules.
+export function roundPointsLabel(round: number): string {
+  const points = POINTS_BY_ROUND[round] ?? 0;
+  return `${points} pt${points === 1 ? "" : "s"}`;
+}
 
 // A 12-bear bracket has 4 Round 1 matchups; a 16-bear bracket has 8.
 export function bracketHasByes(round1Count: number): boolean {

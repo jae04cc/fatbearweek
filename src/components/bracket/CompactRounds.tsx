@@ -1,9 +1,9 @@
 "use client";
 import type { ReactNode } from "react";
 import type { Matchup } from "@/lib/db/schema";
-import { cn } from "@/lib/utils";
-import { ROUND_LABELS, bracketTemplateRows, boxGridRow, COMPACT_ROW_MIN } from "@/lib/bracket/layout";
+import { bracketTemplateRows, boxGridRow, COMPACT_ROW_MIN } from "@/lib/bracket/layout";
 import { MergeConnector, FanConnector } from "@/components/bracket/BracketConnectors";
+import { RoundHeading } from "@/components/bracket/RoundHeading";
 
 // The phone layout for a 16-bear bracket, used by both renderers (the
 // interactive BracketGrid and the read-only ResultsBracket) in place of the
@@ -58,16 +58,12 @@ export function CompactRounds({
           }}
         >
           {[1, 2, 3, 4].map((round, i) => (
-            <div
+            <RoundHeading
               key={round}
+              round={round}
               style={{ gridColumn: i * 2 + 1, gridRow: 1 }}
-              className={cn(
-                "pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500",
-                round === 1 && "snap-start"
-              )}
-            >
-              {ROUND_LABELS[round]}
-            </div>
+              className={round === 1 ? "snap-start" : undefined}
+            />
           ))}
 
           {/* Round 1 */}

@@ -2,9 +2,10 @@
 import { useEffect, useRef } from "react";
 import type { Bear, Matchup } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
-import { bracketHasByes, bracketTemplateRows, boxGridRow, ROUND_LABELS } from "@/lib/bracket/layout";
+import { bracketHasByes, bracketTemplateRows, boxGridRow } from "@/lib/bracket/layout";
 import { CompactRounds } from "@/components/bracket/CompactRounds";
 import { MergeConnector } from "@/components/bracket/BracketConnectors";
+import { RoundHeading } from "@/components/bracket/RoundHeading";
 
 // A read-only view of the REAL tournament's progress, shaped like the
 // bracket page but deliberately kept separate from BracketGrid — that
@@ -176,18 +177,10 @@ export function ResultsBracket({
           className="grid gap-x-3 gap-y-8 pl-5"
           style={{ gridTemplateColumns: GRID_TEMPLATE_COLUMNS, gridTemplateRows: bracketTemplateRows(round1Count) }}
         >
-          <div style={{ gridColumn: 1, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[1]}
-          </div>
-          <div style={{ gridColumn: 3, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[2]}
-          </div>
-          <div style={{ gridColumn: 5, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[3]}
-          </div>
-          <div style={{ gridColumn: 7, gridRow: 1 }} className="pb-2 text-center text-xs font-bold uppercase tracking-widest text-neutral-500">
-            {ROUND_LABELS[4]}
-          </div>
+          <RoundHeading round={1} style={{ gridColumn: 1, gridRow: 1 }} />
+          <RoundHeading round={2} style={{ gridColumn: 3, gridRow: 1 }} />
+          <RoundHeading round={3} style={{ gridColumn: 5, gridRow: 1 }} />
+          <RoundHeading round={4} style={{ gridColumn: 7, gridRow: 1 }} />
 
           {byRound(1).map((m) => (
             <div key={m.id} style={{ gridColumn: 1, gridRow: gridRow(1, m.position) }} className="flex items-center">

@@ -5,13 +5,7 @@ import type { Bear, Matchup } from "@/lib/db/schema";
 import { MatchupCard } from "@/components/matchups/MatchupCard";
 import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 import { Button } from "@/components/ui/Button";
-
-const ROUND_LABELS: Record<number, string> = {
-  1: "Round 1",
-  2: "Round 2",
-  3: "Final Four",
-  4: "Championship",
-};
+import { ROUND_LABELS, roundPointsLabel } from "@/lib/bracket/layout";
 
 export default function MatchupsPage() {
   const { data: session } = useSession();
@@ -129,7 +123,10 @@ export default function MatchupsPage() {
     <div className="flex flex-col min-h-screen">
       <header className="px-5 pt-10 pb-6 text-center">
         <h1 className="text-2xl font-black text-neutral-50">Round Matchups</h1>
-        <p className="text-sm text-neutral-400 mt-0.5">{ROUND_LABELS[currentRound] ?? `Round ${currentRound}`}</p>
+        <p className="text-sm text-neutral-400 mt-0.5">
+          {ROUND_LABELS[currentRound] ?? `Round ${currentRound}`}{" "}
+          <span className="text-neutral-500">({roundPointsLabel(currentRound)} per pick)</span>
+        </p>
       </header>
 
       <main className="flex-1 px-5 pb-10 space-y-3">
