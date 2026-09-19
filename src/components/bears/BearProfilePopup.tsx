@@ -39,7 +39,7 @@ export function BearProfilePopup({ bear, onClose }: { bear: Bear; onClose: () =>
           <X size={18} />
         </button>
         <div className="no-scrollbar max-h-[90vh] overflow-y-auto rounded-2xl">
-          <BearCard bear={bear} fullBio />
+          <BearCard bear={bear} fullDetails />
         </div>
       </div>
     </div>

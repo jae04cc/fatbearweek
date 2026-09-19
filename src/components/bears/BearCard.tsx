@@ -4,10 +4,17 @@ import type { Bear } from "@/lib/db/schema";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ImageLightbox } from "@/components/ui/ImageLightbox";
-import { cn } from "@/lib/utils";
 
-export function BearCard({ bear, fullBio = false }: { bear: Bear; fullBio?: boolean }) {
+// `fullDetails` shows every section in full (the profile popup); otherwise
+// the sections share one Expand/Collapse (the roster list).
+export function BearCard({ bear, fullDetails = false }: { bear: Bear; fullDetails?: boolean }) {
   const [zoomed, setZoomed] = useState<{ src: string; alt: string } | null>(null);
+
+  const sections = [
+    { label: "Identification", text: bear.identification },
+    { label: "Molly's Notes", text: bear.mollysNotes },
+    { label: "Biography", text: bear.bio },
+  ].filter((section): section is { label: string; text: string } => Boolean(section.text));
 
   return (
     <Card>
@@ -29,34 +36,7 @@ export function BearCard({ bear, fullBio = false }: { bear: Bear; fullBio?: bool
           <Badge variant="accent">#{bear.number}</Badge>
           {bear.isBye && <Badge variant="warning">Bye</Badge>}
         </div>
-        {bear.identification && (
-          <div>
-            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Identification</p>
-            <p className="whitespace-pre-line text-sm text-neutral-400">{bear.identification}</p>
-          </div>
-        )}
-        {bear.mollysNotes && (
-          <div>
-            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Molly&apos;s Notes</p>
-            {/* Clamped on the roster list like the biography, full inside the
-                profile popup — notes can run as long as a bio. */}
-            {fullBio ? (
-              <p className="whitespace-pre-line text-sm text-neutral-400">{bear.mollysNotes}</p>
-            ) : (
-              <ExpandableText text={bear.mollysNotes} />
-            )}
-          </div>
-        )}
-        {bear.bio && (
-          <div>
-            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Biography</p>
-            {fullBio ? (
-              <p className="whitespace-pre-line text-sm text-neutral-400">{bear.bio}</p>
-            ) : (
-              <ExpandableText text={bear.bio} />
-            )}
-          </div>
-        )}
+        {sections.length > 0 && <BearDetails sections={sections} collapsible={!fullDetails} />}
       </CardBody>
 
       {zoomed && <ImageLightbox src={zoomed.src} alt={zoomed.alt} onClose={() => setZoomed(null)} />}
@@ -64,26 +44,69 @@ export function BearCard({ bear, fullBio = false }: { bear: Bear; fullBio?: bool
   );
 }
 
-function ExpandableText({ text }: { text: string }) {
-  const [expanded, setExpanded] = useState(false);
-  const [needsToggle, setNeedsToggle] = useState(false);
-  const ref = useRef<HTMLParagraphElement>(null);
+// How much of the details shows before Expand: roughly the identification
+// plus the start of whatever comes next.
+const COLLAPSED_HEIGHT_PX = 144;
+// Fades the last lines out instead of slicing through the middle of one. A
+// mask rather than a colour gradient, so it works over the card's translucent
+// background.
+const COLLAPSED_FADE = "linear-gradient(to bottom, black calc(100% - 2.5rem), transparent)";
 
+// Identification, Molly's Notes and Biography as a single block with one
+// Expand/Collapse, rather than each section clamping and expanding on its own.
+function BearDetails({
+  sections,
+  collapsible,
+}: {
+  sections: { label: string; text: string }[];
+  collapsible: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const content = sections.map((s) => s.text).join("\n");
+
+  // scrollHeight is the full content height whether or not it's clamped, so
+  // this stays correct while expanded, and the Collapse button doesn't vanish.
+  // Re-measured on resize, since a narrower screen wraps into more lines.
   useEffect(() => {
     const el = ref.current;
-    if (el) setNeedsToggle(el.scrollHeight > el.clientHeight + 1);
-  }, [text]);
+    if (!el || !collapsible) return;
+    const measure = () => setOverflows(el.scrollHeight > COLLAPSED_HEIGHT_PX + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [content, collapsible]);
+
+  const clamped = collapsible && !expanded;
 
   return (
     <div>
-      <p ref={ref} className={cn("whitespace-pre-line text-sm text-neutral-400", !expanded && "line-clamp-3")}>
-        {text}
-      </p>
-      {needsToggle && (
+      <div
+        ref={ref}
+        className="flex flex-col gap-4 overflow-hidden"
+        style={
+          clamped
+            ? {
+                maxHeight: COLLAPSED_HEIGHT_PX,
+                ...(overflows ? { maskImage: COLLAPSED_FADE, WebkitMaskImage: COLLAPSED_FADE } : {}),
+              }
+            : undefined
+        }
+      >
+        {sections.map((section) => (
+          <div key={section.label}>
+            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">{section.label}</p>
+            <p className="whitespace-pre-line text-sm text-neutral-400">{section.text}</p>
+          </div>
+        ))}
+      </div>
+      {collapsible && overflows && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1 text-xs font-semibold text-accent-light"
+          className="mt-2 text-xs font-semibold text-accent-light"
         >
           {expanded ? "Collapse" : "Expand"}
         </button>
