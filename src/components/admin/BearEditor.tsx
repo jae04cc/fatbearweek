@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Trash2, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Trash2, Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-type Draft = Pick<Bear, "number" | "name" | "identification" | "bio" | "isBye" | "sortOrder">;
+// sortOrder is deliberately absent: the row order is owned by the reorder
+// endpoint, which renumbers the whole roster at once. Leaving it out of the
+// draft means saving a bear's details can never disturb where it sits.
+type Draft = Pick<Bear, "number" | "name" | "identification" | "bio" | "isBye">;
 
 function draftFromBear(bear: Bear): Draft {
   return {
@@ -16,7 +20,6 @@ function draftFromBear(bear: Bear): Draft {
     identification: bear.identification,
     bio: bear.bio,
     isBye: bear.isBye,
-    sortOrder: bear.sortOrder,
   };
 }
 
@@ -28,6 +31,8 @@ export function BearEditor() {
   const [error, setError] = useState<string | null>(null);
   const [newBear, setNewBear] = useState({ number: "", name: "" });
   const [creating, setCreating] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
 
   const load = () => {
     fetch("/api/admin/bears")
@@ -79,6 +84,34 @@ export function BearEditor() {
     load();
   };
 
+  // Moves one bear a single slot and persists the whole new order. The list
+  // re-renders from local state first so the row moves under the finger
+  // immediately; a failed save reloads from the server rather than leaving the
+  // screen showing an order that was never written.
+  const handleMove = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= bears.length) return;
+
+    const next = [...bears];
+    [next[index], next[target]] = [next[target], next[index]];
+    setBears(next);
+    setError(null);
+    setReordering(true);
+    try {
+      const res = await fetch("/api/admin/bears/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: next.map((b) => b.id) }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? "Failed to reorder");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to reorder");
+      load();
+    } finally {
+      setReordering(false);
+    }
+  };
+
   const handleCreate = async () => {
     if (!newBear.number.trim() || !newBear.name.trim()) return;
     setError(null);
@@ -115,16 +148,24 @@ export function BearEditor() {
           <Badge variant={validRoster ? "success" : "warning"}>{byeCount} byes</Badge>
         </div>
         <p className="text-xs text-neutral-500">
-          A valid roster is 12 bears with 4 byes, or 16 bears with no byes.
+          A valid roster is 12 bears with 4 byes, or 16 bears with no byes. This order is the one
+          players see on the Bears page, and the order bears are listed in when you set up the bracket.
         </p>
       </div>
 
       <div className="space-y-3">
-        {bears.map((bear) => (
+        {bears.map((bear, index) => (
           <BearRow
             key={bear.id}
             bear={bear}
             draft={drafts[bear.id]}
+            expanded={expandedId === bear.id}
+            onToggle={() => setExpandedId(expandedId === bear.id ? null : bear.id)}
+            onMoveUp={() => handleMove(index, -1)}
+            onMoveDown={() => handleMove(index, 1)}
+            canMoveUp={index > 0}
+            canMoveDown={index < bears.length - 1}
+            reordering={reordering}
             onChange={(patch) => updateDraft(bear.id, patch)}
             onSave={() => handleSave(bear.id)}
             onDelete={() => handleDelete(bear.id)}
@@ -163,6 +204,13 @@ export function BearEditor() {
 function BearRow({
   bear,
   draft,
+  expanded,
+  onToggle,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
+  reordering,
   onChange,
   onSave,
   onDelete,
@@ -171,6 +219,13 @@ function BearRow({
 }: {
   bear: Bear;
   draft: Draft;
+  expanded: boolean;
+  onToggle: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  reordering: boolean;
   onChange: (patch: Partial<Draft>) => void;
   onSave: () => void;
   onDelete: () => void;
@@ -210,9 +265,50 @@ function BearRow({
 
   if (!draft) return null;
 
+  const thumbnail = bear.photoAfterUrl ?? bear.photoBeforeUrl;
+
   return (
     <Card>
-      <CardBody className="gap-3">
+      {/* Collapsed header — the whole roster is readable at a glance, and the
+          arrows reorder without opening anything. Sixteen bears expanded at
+          once ran to roughly 700px each. */}
+      <div className="flex items-center gap-2 p-2">
+        <div className="flex shrink-0 flex-col">
+          <MoveButton label={`Move ${bear.name} up`} onClick={onMoveUp} disabled={!canMoveUp || reordering}>
+            <ArrowUp size={13} />
+          </MoveButton>
+          <MoveButton label={`Move ${bear.name} down`} onClick={onMoveDown} disabled={!canMoveDown || reordering}>
+            <ArrowDown size={13} />
+          </MoveButton>
+        </div>
+
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-1 text-left"
+        >
+          {thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbnail} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+          ) : (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/30 text-sm">
+              🐻
+            </span>
+          )}
+          <span className="shrink-0 rounded-full bg-black/30 px-2 py-0.5 font-mono text-xs text-neutral-300">
+            {bear.number}
+          </span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-100">{bear.name}</span>
+          {bear.isBye && <Badge variant="accent">Bye</Badge>}
+          <span className="shrink-0 text-neutral-500">
+            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </span>
+        </button>
+      </div>
+
+      {expanded && (
+      <CardBody className="gap-3 pt-0">
         <div className="flex gap-2">
           <Input value={draft.number} onChange={(e) => onChange({ number: e.target.value })} className="w-24" />
           <Input value={draft.name} onChange={(e) => onChange({ name: e.target.value })} className="flex-1" />
@@ -242,21 +338,10 @@ function BearRow({
           />
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-          <label className="flex items-center gap-2 text-sm text-neutral-300">
-            <input type="checkbox" checked={draft.isBye} onChange={(e) => onChange({ isBye: e.target.checked })} />
-            Has a bye (skips round 1)
-          </label>
-          <label className="flex items-center gap-2 text-sm text-neutral-300">
-            Sort order
-            <Input
-              type="number"
-              value={draft.sortOrder}
-              onChange={(e) => onChange({ sortOrder: parseInt(e.target.value, 10) || 0 })}
-              className="w-16"
-            />
-          </label>
-        </div>
+        <label className="flex items-center gap-2 text-sm text-neutral-300">
+          <input type="checkbox" checked={draft.isBye} onChange={(e) => onChange({ isBye: e.target.checked })} />
+          Has a bye (skips round 1)
+        </label>
 
         <div className="flex gap-3">
           <PhotoUploadSlot
@@ -290,7 +375,35 @@ function BearRow({
           </Button>
         </div>
       </CardBody>
+      )}
     </Card>
+  );
+}
+
+function MoveButton({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cn(
+        "flex h-6 w-7 items-center justify-center rounded-lg transition-colors",
+        disabled ? "text-neutral-700" : "text-neutral-400 hover:bg-white/5 hover:text-neutral-100"
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
