@@ -11,6 +11,9 @@ interface Props {
   bearA?: Bear;
   bearB?: Bear;
   pickCounts: Record<string, number>;
+  // False until the bracket locks — the counts are withheld server-side then,
+  // so rendering them would just show every bear at a misleading 0%.
+  showPicks: boolean;
   isAdmin: boolean;
   onMarkWinner: (bearId: string) => void;
   onUnmarkWinner: () => void;
@@ -23,6 +26,7 @@ export function MatchupCard({
   bearA,
   bearB,
   pickCounts,
+  showPicks,
   isAdmin,
   onMarkWinner,
   onUnmarkWinner,
@@ -73,11 +77,13 @@ export function MatchupCard({
                     <span className="truncate font-semibold text-neutral-100">{bear.name}</span>
                     <Badge variant="accent">#{bear.number}</Badge>
                   </div>
-                  <span className="text-xs text-neutral-500 shrink-0">{pct}% picked</span>
+                  {showPicks && <span className="text-xs text-neutral-500 shrink-0">{pct}% picked</span>}
                 </button>
-                <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/30">
-                  <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
-                </div>
+                {showPicks && (
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/30">
+                    <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+                  </div>
+                )}
                 {isAdmin && !matchup.winnerBearId && (
                   <Button size="sm" variant="secondary" className="mt-2 w-full" loading={marking} onClick={() => onMarkWinner(bear.id)}>
                     Mark as winner

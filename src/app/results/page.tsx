@@ -15,6 +15,7 @@ export default function ResultsPage() {
   const [bears, setBears] = useState<Bear[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
+  const [picksHidden, setPicksHidden] = useState(true);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [completed, setCompleted] = useState({ completed: 0, total: 0 });
   const [bracketLocked, setBracketLocked] = useState(false);
@@ -33,6 +34,7 @@ export default function ResultsPage() {
       setBears(Array.isArray(bearsData) ? bearsData : []);
       setMatchups(picksData.matchups ?? []);
       setPickStats(picksData.pickStats ?? {});
+      setPicksHidden(picksData.picksHidden ?? true);
       setLeaderboard(leaderboardData.leaderboard ?? []);
       setCompleted(leaderboardData.completed ?? { completed: 0, total: 0 });
       setBracketLocked(configData.bracketLocked ?? false);
@@ -92,7 +94,16 @@ export default function ResultsPage() {
         {showBracket && (
           <section>
             <h2 className="mb-3 px-5 text-xs font-bold uppercase tracking-widest text-neutral-500">Tournament results</h2>
-            <ResultsBracket matchups={matchups} bearsById={bearsById} pickStats={pickStats} onSelectBear={setViewingBear} />
+            {picksHidden && (
+              <p className="-mt-1 mb-3 px-5 text-xs text-neutral-500">Pick percentages show once brackets lock.</p>
+            )}
+            <ResultsBracket
+              matchups={matchups}
+              bearsById={bearsById}
+              pickStats={pickStats}
+              showPicks={!picksHidden}
+              onSelectBear={setViewingBear}
+            />
           </section>
         )}
       </main>

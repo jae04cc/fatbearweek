@@ -73,12 +73,14 @@ function ResultMatchBox({
   bearB,
   winnerBearId,
   pickCounts,
+  showPicks,
   onSelectBear,
 }: {
   bearA?: Bear;
   bearB?: Bear;
   winnerBearId?: string | null;
   pickCounts: Record<string, number>;
+  showPicks: boolean;
   onSelectBear: (bear: Bear) => void;
 }) {
   // A matchup isn't really "live" until both real contestants are known —
@@ -86,7 +88,8 @@ function ResultMatchBox({
   // pick count for the one known side (like a bye bear) isn't a real
   // percentage of anything: everyone who predicted the OTHER side hasn't
   // been counted at all, so it'd misleadingly show 100%.
-  const bothKnown = Boolean(bearA && bearB);
+  // Also withheld entirely until the bracket locks — see showPicks.
+  const bothKnown = Boolean(bearA && bearB) && showPicks;
   const total = (bearA ? pickCounts[bearA.id] ?? 0 : 0) + (bearB ? pickCounts[bearB.id] ?? 0 : 0);
   const pctFor = (bearId: string) => (total > 0 ? Math.round(((pickCounts[bearId] ?? 0) / total) * 100) : 0);
 
@@ -114,11 +117,15 @@ export function ResultsBracket({
   matchups,
   bearsById,
   pickStats,
+  showPicks,
   onSelectBear,
 }: {
   matchups: Matchup[];
   bearsById: Map<string, Bear>;
   pickStats: Record<string, Record<string, number>>;
+  // False until the bracket locks: the counts are withheld server-side then,
+  // and every bear would otherwise read as a misleading 0%.
+  showPicks: boolean;
   onSelectBear: (bear: Bear) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -153,6 +160,7 @@ export function ResultsBracket({
       bearB={bearFor(m.bearBId)}
       winnerBearId={m.winnerBearId}
       pickCounts={pickStats[m.id] ?? {}}
+      showPicks={showPicks}
       onSelectBear={onSelectBear}
     />
   );

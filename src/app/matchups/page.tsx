@@ -14,6 +14,7 @@ export default function MatchupsPage() {
   const [bears, setBears] = useState<Bear[]>([]);
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [pickStats, setPickStats] = useState<Record<string, Record<string, number>>>({});
+  const [picksHidden, setPicksHidden] = useState(true);
   const [currentRound, setCurrentRound] = useState(1);
   const [bracketRevealed, setBracketRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,7 @@ export default function MatchupsPage() {
       setBears(Array.isArray(bearsData) ? bearsData : []);
       setMatchups(matchupData.matchups ?? []);
       setPickStats(matchupData.pickStats ?? {});
+      setPicksHidden(matchupData.picksHidden ?? true);
       setCurrentRound(matchupData.currentRound ?? 1);
       setBracketRevealed(configData.bracketRevealed ?? false);
       setLoading(false);
@@ -127,6 +129,9 @@ export default function MatchupsPage() {
           {ROUND_LABELS[currentRound] ?? `Round ${currentRound}`}{" "}
           <span className="text-neutral-500">({roundPointsLabel(currentRound)} per pick)</span>
         </p>
+        {picksHidden && !notReady && (
+          <p className="mt-1 text-xs text-neutral-500">Pick percentages show once brackets lock.</p>
+        )}
       </header>
 
       <main className="flex-1 px-5 pb-10 space-y-3">
@@ -142,6 +147,7 @@ export default function MatchupsPage() {
               bearA={m.bearAId ? bearsById.get(m.bearAId) : undefined}
               bearB={m.bearBId ? bearsById.get(m.bearBId) : undefined}
               pickCounts={pickStats[m.id] ?? {}}
+              showPicks={!picksHidden}
               isAdmin={isAdmin}
               marking={markingId === m.id}
               onMarkWinner={(bearId) => handleMarkWinner(m.id, bearId)}

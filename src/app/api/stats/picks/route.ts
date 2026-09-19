@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { matchups } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/adminGuard";
-import { isBracketRevealed } from "@/lib/settings";
+import { isBracketLocked, isBracketRevealed } from "@/lib/settings";
 import { playerIdSet, tallyPickStats } from "@/lib/stats";
 import { asc } from "drizzle-orm";
 
@@ -15,7 +15,7 @@ export async function GET() {
   // Gated server-side (see /api/bears) — the results bracket is built from
   // this, so it stays hidden for non-admins until the bracket reveals.
   if (!session.user.isAdmin && !(await isBracketRevealed())) {
-    return NextResponse.json({ matchups: [], pickStats: {}, totalPlayers: 0 });
+    return NextResponse.json({ matchups: [], pickStats: {}, picksHidden: true, totalPlayers: 0 });
   }
 
   const [allMatchups, allPicks, allUsers] = await Promise.all([
@@ -26,11 +26,18 @@ export async function GET() {
 
   const playerIds = playerIdSet(allUsers);
   const playerPicks = allPicks.filter((p) => playerIds.has(p.userId));
-  const pickStats = tallyPickStats(playerPicks);
+
+  // Pick percentages stay hidden until the bracket locks — for everyone,
+  // admins included, since admins fill out brackets too. While picks are
+  // still open, seeing where the pool leans would sway the picks being made.
+  // Same gate as /api/matchups.
+  const picksHidden = !(await isBracketLocked());
+  const pickStats = picksHidden ? {} : tallyPickStats(playerPicks);
 
   return NextResponse.json({
     matchups: allMatchups,
     pickStats,
+    picksHidden,
     totalPlayers: new Set(playerPicks.map((p) => p.userId)).size,
   });
 }
