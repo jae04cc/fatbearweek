@@ -35,6 +35,18 @@ export function BearCard({ bear, fullBio = false }: { bear: Bear; fullBio?: bool
             <p className="whitespace-pre-line text-sm text-neutral-400">{bear.identification}</p>
           </div>
         )}
+        {bear.mollysNotes && (
+          <div>
+            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Molly&apos;s Notes</p>
+            {/* Clamped on the roster list like the biography, full inside the
+                profile popup — notes can run as long as a bio. */}
+            {fullBio ? (
+              <p className="whitespace-pre-line text-sm text-neutral-400">{bear.mollysNotes}</p>
+            ) : (
+              <ExpandableText text={bear.mollysNotes} />
+            )}
+          </div>
+        )}
         {bear.bio && (
           <div>
             <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Biography</p>

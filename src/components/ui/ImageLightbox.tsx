@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useScrollLock } from "@/lib/useScrollLock";
 import { X } from "lucide-react";
 
@@ -10,7 +10,6 @@ interface ImageLightboxProps {
 }
 
 export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   useScrollLock();
 
   useEffect(() => {
@@ -22,14 +21,11 @@ export function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
   }, [onClose]);
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
-      }}
-    >
-      <div className="absolute inset-x-0 -inset-y-full bg-black/90" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* The close handler belongs on the scrim, not the wrapper above it:
+          the scrim covers the whole wrapper, so it — not the wrapper — is what
+          a tap outside the card actually lands on. */}
+      <div className="absolute inset-x-0 -inset-y-full bg-black/90" onClick={onClose} />
       <button
         type="button"
         onClick={onClose}

@@ -11,11 +11,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   try {
     const body = await req.json();
-    const { number, name, identification, bio, isBye, sortOrder } = body as {
+    const { number, name, identification, bio, mollysNotes, isBye, sortOrder } = body as {
       number?: string;
       name?: string;
       identification?: string | null;
       bio?: string | null;
+      mollysNotes?: string | null;
       isBye?: boolean;
       sortOrder?: number;
     };
@@ -25,6 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (name !== undefined) updates.name = name.trim();
     if (identification !== undefined) updates.identification = identification?.trim() || null;
     if (bio !== undefined) updates.bio = bio?.trim() || null;
+    if (mollysNotes !== undefined) updates.mollysNotes = mollysNotes?.trim() || null;
     if (isBye !== undefined) updates.isBye = isBye;
     if (sortOrder !== undefined) updates.sortOrder = sortOrder;
 

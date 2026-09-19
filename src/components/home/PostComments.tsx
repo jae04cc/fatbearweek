@@ -204,7 +204,6 @@ function AllCommentsPopup({
   onError: (message: string | null) => void;
   onClose: () => void;
 }) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   useScrollLock();
 
@@ -224,14 +223,11 @@ function AllCommentsPopup({
   }, [comments.length]);
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
-      }}
-    >
-      <div className="absolute inset-x-0 -inset-y-full bg-black/85" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* The close handler belongs on the scrim, not the wrapper above it:
+          the scrim covers the whole wrapper, so it — not the wrapper — is what
+          a tap outside the card actually lands on. */}
+      <div className="absolute inset-x-0 -inset-y-full bg-black/85" onClick={onClose} />
       <div className="relative w-full max-w-sm">
         <button
           type="button"

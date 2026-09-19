@@ -13,6 +13,9 @@ export const bears = sqliteTable("bears", {
   identification: text("identification"),
   // Life history / backstory — shown as "Biography" in the UI
   bio: text("bio"),
+  // Molly's own commentary on the bear, kept separate from the factual
+  // identification and biography above
+  mollysNotes: text("mollys_notes"),
   photoBeforeUrl: text("photo_before_url"),
   photoAfterUrl: text("photo_after_url"),
   // True for the 4 bears that skip round 1 and go straight to round 2

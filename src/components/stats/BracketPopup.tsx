@@ -13,7 +13,6 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewingBear, setViewingBear] = useState<Bear | null>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const gridWrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -83,14 +82,11 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
   const bearsById = new Map(bears.map((b) => [b.id, b]));
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
-      }}
-    >
-      <div className="absolute inset-x-0 -inset-y-full bg-black/85" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* The close handler belongs on the scrim, not the wrapper above it:
+          the scrim covers the whole wrapper, so it — not the wrapper — is what
+          a tap outside the card actually lands on. */}
+      <div className="absolute inset-x-0 -inset-y-full bg-black/85" onClick={onClose} />
       <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4">
           <h2 className="text-lg font-bold text-neutral-50">{loading ? "Loading…" : `${displayName}'s Bracket`}</h2>

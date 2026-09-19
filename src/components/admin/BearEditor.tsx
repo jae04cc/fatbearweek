@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // sortOrder is deliberately absent: the row order is owned by the reorder
 // endpoint, which renumbers the whole roster at once. Leaving it out of the
 // draft means saving a bear's details can never disturb where it sits.
-type Draft = Pick<Bear, "number" | "name" | "identification" | "bio" | "isBye">;
+type Draft = Pick<Bear, "number" | "name" | "identification" | "bio" | "mollysNotes" | "isBye">;
 
 function draftFromBear(bear: Bear): Draft {
   return {
@@ -19,6 +19,7 @@ function draftFromBear(bear: Bear): Draft {
     name: bear.name,
     identification: bear.identification,
     bio: bear.bio,
+    mollysNotes: bear.mollysNotes,
     isBye: bear.isBye,
   };
 }
@@ -328,6 +329,19 @@ function BearRow({
         </div>
 
         <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">
+            Molly&apos;s Notes
+          </label>
+          <textarea
+            placeholder="Molly's take on this bear…"
+            value={draft.mollysNotes ?? ""}
+            onChange={(e) => onChange({ mollysNotes: e.target.value })}
+            rows={3}
+            className="w-full rounded-xl border border-white/10 bg-surface-elevated px-4 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
+
+        <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Biography</label>
           <textarea
             placeholder="This bear's story…"
@@ -337,6 +351,7 @@ function BearRow({
             className="w-full rounded-xl border border-white/10 bg-surface-elevated px-4 py-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
+
 
         <label className="flex items-center gap-2 text-sm text-neutral-300">
           <input type="checkbox" checked={draft.isBye} onChange={(e) => onChange({ isBye: e.target.checked })} />

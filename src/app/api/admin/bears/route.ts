@@ -21,11 +21,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { number, name, identification, bio, isBye, sortOrder } = body as {
+    const { number, name, identification, bio, mollysNotes, isBye, sortOrder } = body as {
       number: string;
       name: string;
       identification?: string;
       bio?: string;
+      mollysNotes?: string;
       isBye?: boolean;
       sortOrder?: number;
     };
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
       name: name.trim(),
       identification: identification?.trim() || null,
       bio: bio?.trim() || null,
+      mollysNotes: mollysNotes?.trim() || null,
       isBye: isBye ?? false,
       sortOrder: sortOrder ?? 0,
       createdAt: new Date(),

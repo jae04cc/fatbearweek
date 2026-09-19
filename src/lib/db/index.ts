@@ -56,6 +56,7 @@ export async function runMigrations() {
       name TEXT NOT NULL,
       identification TEXT,
       bio TEXT,
+      mollys_notes TEXT,
       photo_before_url TEXT,
       photo_after_url TEXT,
       is_bye INTEGER NOT NULL DEFAULT 0,
@@ -130,10 +131,13 @@ export async function runMigrations() {
     await client.execute("UPDATE users SET is_bootstrap = 1 WHERE username = 'admin'");
   }
 
-  // Additive column migration for databases created before identification existed
+  // Additive column migrations for databases created before these existed
   const bearCols = await client.execute("PRAGMA table_info(bears)");
   if (!bearCols.rows.some((r) => r[1] === "identification")) {
     await client.execute("ALTER TABLE bears ADD COLUMN identification TEXT");
+  }
+  if (!bearCols.rows.some((r) => r[1] === "mollys_notes")) {
+    await client.execute("ALTER TABLE bears ADD COLUMN mollys_notes TEXT");
   }
 }
 
