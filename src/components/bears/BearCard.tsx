@@ -5,15 +5,16 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ImageLightbox } from "@/components/ui/ImageLightbox";
 
-// `fullDetails` shows every section in full (the profile popup); otherwise
-// the sections share one Expand/Collapse (the roster list).
+// `fullDetails` shows the biography in full too (the profile popup); otherwise
+// it collapses to its first line behind an Expand (the roster list).
+// Identification and Molly's Notes always show in full — they're short, and
+// they're what you scan the roster for.
 export function BearCard({ bear, fullDetails = false }: { bear: Bear; fullDetails?: boolean }) {
   const [zoomed, setZoomed] = useState<{ src: string; alt: string } | null>(null);
 
-  const sections = [
+  const alwaysShown = [
     { label: "Identification", text: bear.identification },
     { label: "Molly's Notes", text: bear.mollysNotes },
-    { label: "Biography", text: bear.bio },
   ].filter((section): section is { label: string; text: string } => Boolean(section.text));
 
   return (
@@ -36,7 +37,13 @@ export function BearCard({ bear, fullDetails = false }: { bear: Bear; fullDetail
           <Badge variant="accent">#{bear.number}</Badge>
           {bear.isBye && <Badge variant="warning">Bye</Badge>}
         </div>
-        {sections.length > 0 && <BearDetails sections={sections} collapsible={!fullDetails} />}
+        {alwaysShown.map((section) => (
+          <div key={section.label}>
+            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">{section.label}</p>
+            <p className="whitespace-pre-line text-sm text-neutral-400">{section.text}</p>
+          </div>
+        ))}
+        {bear.bio && <Biography text={bear.bio} collapsible={!fullDetails} />}
       </CardBody>
 
       {zoomed && <ImageLightbox src={zoomed.src} alt={zoomed.alt} onClose={() => setZoomed(null)} />}
@@ -44,64 +51,54 @@ export function BearCard({ bear, fullDetails = false }: { bear: Bear; fullDetail
   );
 }
 
-// How much of the details shows before Expand: roughly the identification
-// plus the start of whatever comes next.
-const COLLAPSED_HEIGHT_PX = 144;
-// Fades the last lines out instead of slicing through the middle of one. A
-// mask rather than a colour gradient, so it works over the card's translucent
-// background.
-const COLLAPSED_FADE = "linear-gradient(to bottom, black calc(100% - 2.5rem), transparent)";
+// Collapsed, the biography keeps its first line solid and fades through the
+// second — text-sm lines are 20px, so one line shows and the fade lands on the
+// next rather than slicing through the middle of a line.
+const BIO_LINE_PX = 20;
+const BIO_COLLAPSED_PX = BIO_LINE_PX * 2;
+// A mask rather than a colour gradient, so the fade works over the card's
+// translucent background.
+const BIO_FADE = `linear-gradient(to bottom, black ${BIO_LINE_PX}px, transparent)`;
 
-// Identification, Molly's Notes and Biography as a single block with one
-// Expand/Collapse, rather than each section clamping and expanding on its own.
-function BearDetails({
-  sections,
-  collapsible,
-}: {
-  sections: { label: string; text: string }[];
-  collapsible: boolean;
-}) {
+// The only section that collapses: bios run long, while identification and
+// Molly's notes are a line or two each and always show.
+function Biography({ text, collapsible }: { text: string; collapsible: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [overflows, setOverflows] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const content = sections.map((s) => s.text).join("\n");
+  const ref = useRef<HTMLParagraphElement>(null);
 
-  // scrollHeight is the full content height whether or not it's clamped, so
-  // this stays correct while expanded, and the Collapse button doesn't vanish.
+  // scrollHeight is the full text height whether or not it's clamped, so this
+  // stays correct while expanded and the Collapse button doesn't vanish.
   // Re-measured on resize, since a narrower screen wraps into more lines.
   useEffect(() => {
     const el = ref.current;
     if (!el || !collapsible) return;
-    const measure = () => setOverflows(el.scrollHeight > COLLAPSED_HEIGHT_PX + 1);
+    const measure = () => setOverflows(el.scrollHeight > BIO_COLLAPSED_PX + 1);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [content, collapsible]);
+  }, [text, collapsible]);
 
   const clamped = collapsible && !expanded;
 
   return (
     <div>
-      <div
+      <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">Biography</p>
+      <p
         ref={ref}
-        className="flex flex-col gap-4 overflow-hidden"
+        className="overflow-hidden whitespace-pre-line text-sm text-neutral-400"
         style={
           clamped
             ? {
-                maxHeight: COLLAPSED_HEIGHT_PX,
-                ...(overflows ? { maskImage: COLLAPSED_FADE, WebkitMaskImage: COLLAPSED_FADE } : {}),
+                maxHeight: BIO_COLLAPSED_PX,
+                ...(overflows ? { maskImage: BIO_FADE, WebkitMaskImage: BIO_FADE } : {}),
               }
             : undefined
         }
       >
-        {sections.map((section) => (
-          <div key={section.label}>
-            <p className="mb-1 text-sm font-bold uppercase tracking-wide text-accent-light">{section.label}</p>
-            <p className="whitespace-pre-line text-sm text-neutral-400">{section.text}</p>
-          </div>
-        ))}
-      </div>
+        {text}
+      </p>
       {collapsible && overflows && (
         <button
           type="button"
