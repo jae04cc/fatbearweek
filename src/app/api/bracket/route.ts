@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest) {
   if (error) return error;
 
   if (await isBracketLocked()) {
-    return NextResponse.json({ error: "The bracket is locked — picks can no longer be changed." }, { status: 423 });
+    return NextResponse.json({ error: "The bracket is locked. Picks can no longer be changed." }, { status: 423 });
   }
 
   try {

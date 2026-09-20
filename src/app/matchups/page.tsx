@@ -94,7 +94,7 @@ export default function MatchupsPage() {
   };
 
   const handleRegress = async () => {
-    if (!confirm(`Go back to ${ROUND_LABELS[currentRound - 1]}? This only changes which round is shown here — recorded winners are untouched.`)) return;
+    if (!confirm(`Go back to ${ROUND_LABELS[currentRound - 1]}? This only changes which round is shown here. Recorded winners are untouched.`)) return;
     setError(null);
     setAdvancing(true);
     try {
@@ -137,7 +137,7 @@ export default function MatchupsPage() {
       <main className="flex-1 px-5 pb-10 space-y-3">
         {notReady ? (
           <p className="text-center text-neutral-500 py-20">
-            The bracket hasn't been seeded yet{isAdmin && matchups.length === 0 ? " — head to Admin → Setup to set it up." : "."}
+            The bracket hasn't been seeded yet{isAdmin && matchups.length === 0 ? ". Head to Admin → Setup to set it up." : "."}
           </p>
         ) : (
           matchups.map((m) => (
@@ -166,7 +166,7 @@ export default function MatchupsPage() {
         )}
         {isAdmin && matchups.length > 0 && currentRound > 1 && (
           <Button variant="ghost" className="w-full" loading={advancing} onClick={handleRegress}>
-            Undo advance — back to {ROUND_LABELS[currentRound - 1]}
+            Undo advance, back to {ROUND_LABELS[currentRound - 1]}
           </Button>
         )}
       </main>

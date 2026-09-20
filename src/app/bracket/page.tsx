@@ -116,7 +116,7 @@ export default function BracketPage() {
         )}
         {!notReady && bracketLocked && showLockNotice && (
           <div className="absolute right-5 top-20 z-20 w-56 rounded-xl border border-warning/30 bg-surface-elevated px-3 py-2.5 text-xs text-warning shadow-xl">
-            The bracket is locked — picks can no longer be changed.
+            The bracket is locked. Picks can no longer be changed.
           </div>
         )}
       </header>

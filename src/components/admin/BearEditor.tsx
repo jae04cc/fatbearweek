@@ -320,7 +320,7 @@ function BearRow({
             Identification
           </label>
           <textarea
-            placeholder="Distinguishing features — scars, ear tags, size, coloring…"
+            placeholder="Distinguishing features: scars, ear tags, size, coloring…"
             value={draft.identification ?? ""}
             onChange={(e) => onChange({ identification: e.target.value })}
             rows={2}
@@ -466,7 +466,7 @@ function PhotoUploadSlot({
         className="hidden"
         onChange={(e) => onFile(e.target.files?.[0])}
       />
-      <p className="mt-1 text-center text-xs text-neutral-500">{label} — click, then paste (Ctrl+V) or choose a file</p>
+      <p className="mt-1 text-center text-xs text-neutral-500">{label}: click, then paste (Ctrl+V) or choose a file</p>
     </div>
   );
 }

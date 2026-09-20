@@ -119,7 +119,7 @@ export function HomeContentEditor() {
             </p>
           </div>
           <textarea
-            placeholder="e.g. **$20 per bracket** — Venmo @someone"
+            placeholder="e.g. **$20 per bracket**, Venmo @someone"
             value={paymentInfo}
             onChange={(e) => {
               setPaymentInfo(e.target.value);
@@ -234,7 +234,7 @@ function BlockEditor({
         <Input placeholder="Title" value={block.title} onChange={(e) => onChange({ title: e.target.value })} />
         <textarea
           ref={textareaRef}
-          placeholder="Body text (Markdown) — paste an image anywhere in here to embed it inline"
+          placeholder="Body text (Markdown). Paste an image anywhere in here to embed it inline"
           value={block.body}
           onChange={(e) => onChange({ body: e.target.value })}
           onPaste={handlePaste}

@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (winnerBearId === null) {
       if (downstream?.winnerBearId) {
         return NextResponse.json(
-          { error: "Can't unmark — the next round already has a recorded winner built on this result." },
+          { error: "Can't unmark. The next round already has a recorded winner built on this result." },
           { status: 409 }
         );
       }

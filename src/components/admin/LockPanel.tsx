@@ -64,8 +64,8 @@ export function LockPanel() {
             <p className="font-semibold text-neutral-100">Reveal bears</p>
             <p className="text-sm text-neutral-400">
               {bearsRevealed
-                ? "Revealed — players can see the bears roster."
-                : "Hidden — players see a placeholder while you add bears. Admins always see the real roster."}
+                ? "Revealed. Players can see the bears roster."
+                : "Hidden. Players see a placeholder while you add bears. Admins always see the real roster."}
             </p>
           </div>
           <Toggle
@@ -83,10 +83,10 @@ export function LockPanel() {
             <p className="font-semibold text-neutral-100">Reveal bracket</p>
             <p className="text-sm text-neutral-400">
               {!bearsRevealed
-                ? "Reveal the bears first — the bracket is full of their names and photos."
+                ? "Reveal the bears first. The bracket is full of their names and photos."
                 : bracketRevealed
-                  ? "Revealed — players can see the bracket, Round Matchups, and the results bracket."
-                  : "Hidden — players see a placeholder on those pages. Admins always see the real thing."}
+                  ? "Revealed. Players can see the bracket, Round Matchups, and the results bracket."
+                  : "Hidden. Players see a placeholder on those pages. Admins always see the real thing."}
             </p>
           </div>
           <Toggle
@@ -104,8 +104,8 @@ export function LockPanel() {
             <p className="font-semibold text-neutral-100">Bracket lock</p>
             <p className="text-sm text-neutral-400">
               {bracketLocked
-                ? "Locked — nobody, including admins, can change picks."
-                : "Unlocked — everyone can fill in or edit their bracket."}
+                ? "Locked. Nobody, including admins, can change picks."
+                : "Unlocked. Everyone can fill in or edit their bracket."}
             </p>
           </div>
           <Toggle

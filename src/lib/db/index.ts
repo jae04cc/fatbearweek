@@ -168,7 +168,7 @@ export async function bootstrapAdmin() {
   // eslint-disable-next-line no-console
   console.log(
     "\n=========================================================\n" +
-      "  Fat Bear Week — bootstrap admin account created\n" +
+      "  Fat Bear Week: bootstrap admin account created\n" +
       "  Username: admin\n" +
       `  Password: ${password}\n` +
       "  Log in once, then create real pool-member accounts from /admin.\n" +

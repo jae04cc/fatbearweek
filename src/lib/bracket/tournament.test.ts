@@ -99,7 +99,7 @@ function decideRound(rows: Row[], round: number): Row[] {
   for (const m of rows.filter((r) => r.round === round).sort(byRoundPosition)) {
     const live = next.find((r) => r.id === m.id)!;
     if (!live.bearAId || !live.bearBId) {
-      throw new Error(`${m.id} has no contestants to decide — feeders didn't cascade`);
+      throw new Error(`${m.id} has no contestants to decide, feeders didn't cascade`);
     }
     next = decide(next, m.id, favourite(live.bearAId, live.bearBId));
   }
@@ -114,7 +114,7 @@ function fillBracket(rows: Row[], choose: (options: [string, string], matchup: R
   for (const m of [...rows].sort(byRoundPosition)) {
     const resolved = resolveContestants(rows, picks).find((r) => r.id === m.id)!;
     if (!resolved.bearAId || !resolved.bearBId) {
-      throw new Error(`${m.id} never resolved two contestants — the bracket can't be filled in`);
+      throw new Error(`${m.id} never resolved two contestants, the bracket can't be filled in`);
     }
     picks = pruneInvalidPicks(rows, {
       ...picks,

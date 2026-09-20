@@ -97,7 +97,7 @@ export function BracketSetup() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to reset");
       setBears([]);
-      setMessage({ type: "success", text: `Reset complete — ${body.bearsDeleted} bears and the bracket were removed.` });
+      setMessage({ type: "success", text: `Reset complete. ${body.bearsDeleted} bears and the bracket were removed.` });
     } catch (e) {
       setMessage({ type: "error", text: e instanceof Error ? e.message : "Failed to reset" });
     } finally {
@@ -118,7 +118,7 @@ export function BracketSetup() {
       <div className="space-y-4">
         <Card>
           <CardBody className="text-sm text-neutral-400">
-            Add a full roster in the Bears tab before setting up the bracket — either 12 bears (8 regular + 4
+            Add a full roster in the Bears tab before setting up the bracket: either 12 bears (8 regular + 4
             with a bye) or 16 bears (all regular, no byes).
             Currently: {nonByeBears.length} regular, {byeBears.length} byes.
           </CardBody>
@@ -137,7 +137,7 @@ export function BracketSetup() {
         <CardBody className="gap-3">
           <p className="font-semibold text-neutral-100">Round 1 matchups</p>
           <p className="text-sm text-neutral-400">
-            Set these to match the real published bracket exactly — this isn't randomized or auto-paired.
+            Set these to match the real published bracket exactly. This isn't randomized or auto-paired.
           </p>
           {round1.map((slot, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -201,7 +201,7 @@ function ResetSeasonPanel({ resetting, onReset }: { resetting: boolean; onReset:
         <p className="font-semibold text-danger">Danger zone</p>
         <p className="text-sm text-neutral-400">
           Starting a new season? This permanently deletes every bear (and their photos), the whole bracket, and
-          everyone's picks — nothing else is touched.
+          everyone's picks. Nothing else is touched.
         </p>
         <Button size="sm" variant="danger" onClick={onReset} loading={resetting} className="self-start">
           Reset for a new season

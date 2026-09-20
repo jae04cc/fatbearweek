@@ -71,7 +71,7 @@ export function SignupCodePanel() {
             {copied ? "Copied!" : "Copy sign-up link"}
           </Button>
         </div>
-        {!savedCode && <p className="text-xs text-warning">Sign-up is currently off — set a code above to enable it.</p>}
+        {!savedCode && <p className="text-xs text-warning">Sign-up is currently off. Set a code above to enable it.</p>}
       </CardBody>
     </Card>
   );

@@ -23,12 +23,12 @@ export function BearCard({ bear, fullDetails = false }: { bear: Bear; fullDetail
         <PhotoSlot
           label="Before"
           url={bear.photoBeforeUrl}
-          onZoom={() => bear.photoBeforeUrl && setZoomed({ src: bear.photoBeforeUrl, alt: `${bear.name} — before` })}
+          onZoom={() => bear.photoBeforeUrl && setZoomed({ src: bear.photoBeforeUrl, alt: `${bear.name}, before` })}
         />
         <PhotoSlot
           label="After"
           url={bear.photoAfterUrl}
-          onZoom={() => bear.photoAfterUrl && setZoomed({ src: bear.photoAfterUrl, alt: `${bear.name} — after` })}
+          onZoom={() => bear.photoAfterUrl && setZoomed({ src: bear.photoAfterUrl, alt: `${bear.name}, after` })}
         />
       </div>
       <CardBody className="gap-4">
