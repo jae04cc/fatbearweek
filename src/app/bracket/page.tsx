@@ -8,7 +8,8 @@ import { BracketGrid } from "@/components/bracket/BracketGrid";
 import { BearProfilePopup } from "@/components/bears/BearProfilePopup";
 import { Button } from "@/components/ui/Button";
 import { FloatingActions } from "@/components/ui/FloatingActions";
-import { Lock } from "lucide-react";
+import { pluralize } from "@/lib/utils";
+import { AlertTriangle, Lock } from "lucide-react";
 
 export default function BracketPage() {
   const { data: session } = useSession();
@@ -51,6 +52,12 @@ export default function BracketPage() {
   // Nothing to show if the bracket isn't seeded yet, or if it is but the
   // admin hasn't revealed it to players yet (admins can still preview it).
   const notReady = matchups.length === 0 || (!isAdmin && !bracketRevealed);
+  // Counted off the live picks, not the saved ones, so the warning clears as
+  // the last box is filled in rather than waiting for a Save. Every matchup
+  // needs exactly one pick, so the shortfall is just the difference — and
+  // pruneInvalidPicks keeps the pick set free of stale entries, so a pick that
+  // no longer resolves has already been dropped and counts as missing here.
+  const remainingPicks = matchups.length - Object.keys(picks).length;
 
   const pickBear = useCallback(
     (matchupId: string, bearId: string) => {
@@ -118,6 +125,25 @@ export default function BracketPage() {
         <p className="px-5 py-20 text-center text-neutral-500">The bracket hasn't been seeded yet.</p>
       ) : (
         <>
+          {remainingPicks > 0 && (
+            <div className="mx-5 mb-4 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs text-warning">
+              <AlertTriangle size={14} className="mt-px shrink-0" />
+              <span>
+                {bracketLocked ? (
+                  <>
+                    This bracket is incomplete. {pluralize(remainingPicks, "matchup")} went unpicked before it
+                    locked.
+                  </>
+                ) : (
+                  <>
+                    You still have {pluralize(remainingPicks, "pick")} to make before your bracket is complete. Every
+                    matchup needs a pick, including the later rounds.
+                  </>
+                )}
+              </span>
+            </div>
+          )}
+
           <div className="pb-24">
             <BracketGrid
               matchups={matchups}
