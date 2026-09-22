@@ -41,7 +41,7 @@ export default function HomePage() {
 
   const paidPct = paid.total > 0 ? Math.round((paid.paid / paid.total) * 100) : 0;
   // Only worth drawing when there's actually something on both sides of it
-  const hasPoolSummary = paid.total > 0 || (!bracketLocked && paymentInfo.trim().length > 0);
+  const hasPoolSummary = paid.total > 0 || paymentInfo.trim().length > 0;
   const showDivider = hasPoolSummary && blocks.length > 0;
 
   return (
@@ -96,9 +96,9 @@ export default function HomePage() {
           </Card>
         )}
 
-        {/* Joining instructions are only actionable while there's still a
-            bracket to fill in — once locked, this is just stale clutter. */}
-        {!bracketLocked && paymentInfo.trim() && (
+        {/* Stays visible after lock: it carries standing info people still
+            refer back to mid-tournament, not just how to join. */}
+        {paymentInfo.trim() && (
           <Card>
             <CardBody className="gap-1 py-3">
               <p className="text-xs font-bold uppercase tracking-widest text-accent-light">How to play</p>
