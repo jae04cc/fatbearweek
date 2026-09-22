@@ -46,9 +46,19 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
       const availableHeight = area.clientHeight;
       const availableWidth = area.clientWidth;
       const naturalHeight = wrapper.scrollHeight;
+      // The grid lives inside its own overflow-x-auto container, so the
+      // wrapper cannot see how wide the bracket really is — measure the
+      // scroller itself.
+      const scroller = wrapper.querySelector<HTMLElement>("[data-bracket-scroll]");
+      const naturalWidth = scroller ? scroller.scrollWidth : 0;
       const nextScale = availableHeight > 0 && naturalHeight > 0 ? Math.min(1, availableHeight / naturalHeight) : 1;
       setScale(nextScale);
-      setWrapperWidth(nextScale > 0 ? availableWidth / nextScale : availableWidth);
+      // Widen back to fill the area after the shrink, but never past what the
+      // bracket actually occupies: the grid's own scroll container fills this
+      // wrapper, so overshooting the content width adds empty space on the
+      // right that you can scroll into for no reason.
+      const filledWidth = nextScale > 0 ? availableWidth / nextScale : availableWidth;
+      setWrapperWidth(naturalWidth > 0 ? Math.min(filledWidth, naturalWidth) : filledWidth);
     };
 
     recomputeScale();
@@ -118,6 +128,7 @@ export function BracketPopup({ userId, bears, onClose }: { userId: string; bears
                 disabled
                 onPick={() => {}}
                 onSelectBear={setViewingBear}
+                forceFullLayout
               />
             </div>
           </div>

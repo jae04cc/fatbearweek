@@ -78,6 +78,7 @@ export function BracketGrid({
   disabled,
   onPick,
   onSelectBear,
+  forceFullLayout = false,
 }: {
   matchups: Matchup[];
   bearsById: Map<string, Bear>;
@@ -85,6 +86,10 @@ export function BracketGrid({
   disabled: boolean;
   onPick: (matchupId: string, bearId: string) => void;
   onSelectBear: (bear: Bear) => void;
+  // Render the true cascading grid at every width, skipping the packed phone
+  // stack. Used by the read-only bracket popup, which scales the whole bracket
+  // down to fit, so it has the room to show the real shape even on a phone.
+  forceFullLayout?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -139,8 +144,10 @@ export function BracketGrid({
   };
 
   // A 12-bear bracket is packed at every width, so it renders one grid; a
-  // 16-bear one swaps in the packed phone layout below md.
-  const phoneLayout = !hasByes;
+  // 16-bear one swaps in the packed phone layout below md — unless the caller
+  // asked for the full layout (the popup), where the bracket is scaled to fit
+  // and the real cascading shape is the whole point.
+  const phoneLayout = !hasByes && !forceFullLayout;
 
   return (
     <main className="flex-1">
@@ -157,6 +164,7 @@ export function BracketGrid({
           counts toward the scrollable width. */}
       <div
         ref={scrollRef}
+        data-bracket-scroll=""
         className={`no-scrollbar overflow-x-auto pb-4 ${phoneLayout ? "hidden md:flex" : "flex"}`}
       >
         <div
