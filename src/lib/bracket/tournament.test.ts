@@ -200,14 +200,13 @@ describe("16-bear tournament", () => {
     }
   });
 
-  it("writes off a busted run only as each round proves it dead", () => {
-    // This player backs bear-2 all the way — a bear that loses in Round 1.
-    // Their later picks can't be written off the moment bear-2 loses: a
-    // Final Four box has no real contestants until Round 2 is decided, so
-    // until then those points are still notionally live. Getting this wrong
-    // in either direction is what makes "points remaining" lie.
+  it("writes off a busted run the moment its bear loses", () => {
+    // This player backs bear-2 all the way, a bear that loses in Round 1.
+    // Every later bear-2 pick is dead as soon as that result is in, even
+    // though the Final Four and Championship boxes have no real contestants
+    // yet. Leaving those points live is what made "points remaining" lie.
     let rows = seed(flat16());
-    const loyalist = fillBracket(rows, (options, m) =>
+    const loyalist = fillBracket(rows, (options) =>
       options.includes(bear(2)) ? bear(2) : pickFavourites(options)
     );
     const picks = toPicks("loyalist", loyalist);
@@ -218,33 +217,65 @@ describe("16-bear tournament", () => {
       bear(2),
     ]);
 
-    rows = decideRound(rows, 1);
+    // Only the one matchup bear-2 plays in: r2p1 is still half empty, but
+    // bear-2 is out, so its Round 2, Final Four and Championship picks all go.
+    rows = decide(rows, "r1p1", bear(1));
     let entry = computeLeaderboard([player("loyalist")], rows, picks)[0];
-    // 7 of 8 Round 1 picks right. Round 2 position 1 is now provably dead
-    // (bear-1 vs bear-3, and they hold bear-2), so its 2 points leave
-    // remaining; Rounds 3 and 4 are still unresolved, so theirs don't.
+    expect(entry.points).toBe(0);
+    expect(entry.maxRemaining).toBe(7 * 1 + 3 * 2 + 1 * 4);
+    expect(entry.maxPossible).toBe(17);
+
+    rows = decideRound(rows, 1);
+    entry = computeLeaderboard([player("loyalist")], rows, picks)[0];
     expect(entry.points).toBe(7);
-    expect(entry.maxRemaining).toBe(3 * 2 + 4 + 4 + 8);
-    expect(entry.maxPossible).toBe(29);
+    expect(entry.maxRemaining).toBe(3 * 2 + 4);
+    expect(entry.maxPossible).toBe(17);
 
     rows = decideRound(rows, 2);
     entry = computeLeaderboard([player("loyalist")], rows, picks)[0];
-    // Final Four position 1 is bear-1 vs bear-5 now — the bear-2 pick there
-    // is dead too, so its 4 points drop out.
     expect(entry.points).toBe(7 + 3 * 2);
-    expect(entry.maxRemaining).toBe(4 + 8);
-    expect(entry.maxPossible).toBe(25);
+    expect(entry.maxRemaining).toBe(4);
+    expect(entry.maxPossible).toBe(17);
 
     rows = decideRound(rows, 3);
     entry = computeLeaderboard([player("loyalist")], rows, picks)[0];
     expect(entry.points).toBe(13 + 4);
-    expect(entry.maxRemaining).toBe(0); // the championship pick is dead as well
+    expect(entry.maxRemaining).toBe(0);
     expect(entry.maxPossible).toBe(17);
 
     rows = decideRound(rows, 4);
     entry = computeLeaderboard([player("loyalist")], rows, picks)[0];
     expect(entry.points).toBe(17);
     expect(entry.maxPossible).toBe(17);
+  });
+
+  it("never lets max possible rise as results come in", () => {
+    // Max possible can only fall or hold. Deciding one matchup at a time, in
+    // an order that leaves plenty of boxes half filled, catches any pick that
+    // stays live after its bear is out and only drops later.
+    let rows = seed(flat16());
+    const underdog = fillBracket(rows, (options) =>
+      favourite(options[0], options[1]) === options[0] ? options[1] : options[0]
+    );
+    const picks = toPicks("underdog", underdog);
+    let previous = computeLeaderboard([player("underdog")], rows, picks)[0].maxPossible;
+    expect(previous).toBe(32);
+
+    for (const round of [1, 2, 3, 4]) {
+      const order = rows.filter((r) => r.round === round).sort((a, b) => b.position - a.position);
+      for (const m of order) {
+        const live = rows.find((r) => r.id === m.id)!;
+        rows = decide(rows, m.id, favourite(live.bearAId!, live.bearBId!));
+        const entry = computeLeaderboard([player("underdog")], rows, picks)[0];
+        expect(entry.maxPossible).toBeLessThanOrEqual(previous);
+        previous = entry.maxPossible;
+      }
+      if (round === 1) {
+        // Every Round 1 underdog lost, so nothing past Round 1 can score.
+        expect(computeLeaderboard([player("underdog")], rows, picks)[0].maxRemaining).toBe(0);
+      }
+    }
+    expect(previous).toBe(0);
   });
 
   it("ranks a perfect bracket above a busted one", () => {

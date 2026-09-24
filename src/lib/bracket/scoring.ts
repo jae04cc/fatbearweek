@@ -20,6 +20,16 @@ export function computeLeaderboard(
   allPicks: Pick<UserPick, "userId" | "matchupId" | "pickedBearId">[]
 ): LeaderboardEntry[] {
   const matchupById = new Map(matchups.map((m) => [m.id, m]));
+
+  // Every bear that has lost a real matchup. A pick on one of them is dead in
+  // every later round, even where that box's real contestants aren't known yet.
+  const eliminated = new Set<string>();
+  for (const m of matchups) {
+    if (!m.winnerBearId) continue;
+    for (const bearId of [m.bearAId, m.bearBId]) {
+      if (bearId && bearId !== m.winnerBearId) eliminated.add(bearId);
+    }
+  }
   const picksByUser = new Map<string, typeof allPicks>();
   for (const pick of allPicks) {
     const list = picksByUser.get(pick.userId) ?? [];
@@ -47,12 +57,13 @@ export function computeLeaderboard(
           continue;
         }
 
-        // Undecided — still eligible for "best case" points unless this pick
-        // is already provably impossible (the real bracket has progressed
-        // far enough to show this pick's bear isn't even a real contestant
-        // here, because an earlier real result eliminated them already).
+        // Undecided: still worth its round's points unless the picked bear
+        // can no longer get here. That's the case once they've lost anywhere,
+        // or once the box already holds two other bears.
         const bothRealKnown = Boolean(matchup.bearAId && matchup.bearBId);
-        const busted = bothRealKnown && pick.pickedBearId !== matchup.bearAId && pick.pickedBearId !== matchup.bearBId;
+        const notContesting =
+          bothRealKnown && pick.pickedBearId !== matchup.bearAId && pick.pickedBearId !== matchup.bearBId;
+        const busted = eliminated.has(pick.pickedBearId) || notContesting;
         if (!busted) {
           maxRemaining += roundPoints;
         }
