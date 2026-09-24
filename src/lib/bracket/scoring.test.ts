@@ -66,6 +66,23 @@ describe("computeLeaderboard", () => {
     expect(board.find((e) => e.userId === "bust")!.maxRemaining).toBe(0);
   });
 
+  it("drops a pick on a bear that already lost, even before the box fills", () => {
+    // L lost in Round 1. The Final Four box has no real contestants yet, but a
+    // pick of L there can never come true.
+    const matchups: ScoringMatchup[] = [
+      { id: "r1", round: 1, winnerBearId: "W", bearAId: "W", bearBId: "L" },
+      { id: "r3", round: 3, winnerBearId: null, bearAId: null, bearBId: null },
+    ];
+    const picks: Pick[] = [
+      { userId: "live", matchupId: "r3", pickedBearId: "W" },
+      { userId: "bust", matchupId: "r3", pickedBearId: "L" },
+    ];
+    const board = computeLeaderboard([player("live"), player("bust")], matchups, picks);
+
+    expect(board.find((e) => e.userId === "live")!.maxRemaining).toBe(4);
+    expect(board.find((e) => e.userId === "bust")!.maxRemaining).toBe(0);
+  });
+
   it("gives byes no phantom Round 1 credit (scores picks, not bears)", () => {
     // A bye bear has no Round 1 matchup row, so a player who only has Round 2+
     // picks earns nothing in Round 1 — there's simply no r1 pick to score.
