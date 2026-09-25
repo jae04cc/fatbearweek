@@ -59,7 +59,7 @@ export function Leaderboard({
               <div className="flex flex-col items-center gap-0.5">
                 <Badge variant="accent">{entry.points} pts</Badge>
                 {entry.maxRemaining > 0 && (
-                  <span className="text-[10px] text-neutral-500">{entry.maxRemaining} PPR</span>
+                  <span className="text-[10px] text-neutral-500">{entry.maxRemaining} ppr</span>
                 )}
               </div>
             </button>
