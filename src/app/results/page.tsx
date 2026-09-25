@@ -88,7 +88,7 @@ export default function ResultsPage() {
               costs no extra vertical space. Only shown while somebody still
               has points left to earn — once every matchup is decided the PPR
               figure disappears from the rows and the note would be stale. */}
-          <div className="mb-3 flex items-baseline justify-between gap-4">
+          <div className="mb-3 flex items-end justify-between gap-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500">Leaderboard</h2>
             {leaderboard.some((e) => e.maxRemaining > 0) && (
               <div className="text-right text-[10px] leading-tight text-neutral-500">
