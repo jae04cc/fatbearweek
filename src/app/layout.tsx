@@ -15,8 +15,14 @@ export const metadata: Metadata = {
   title: "Fat Bear Week",
   description: "Bracket pool for Fat Bear Week",
   manifest: "/manifest.json",
+  // iOS won't use an SVG for the home-screen icon, so it needs the
+  // apple-touch-icon PNG. The SVG stays as the browser-tab favicon.
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
   },
   appleWebApp: {
     capable: true,
