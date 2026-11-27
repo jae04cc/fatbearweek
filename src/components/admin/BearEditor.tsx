@@ -434,7 +434,7 @@ function PhotoUploadSlot({
   label: string;
   url: string | null;
   uploading: boolean;
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   onPick: () => void;
   onFile: (file: File | undefined) => void;
   onPaste: (e: React.ClipboardEvent) => void;

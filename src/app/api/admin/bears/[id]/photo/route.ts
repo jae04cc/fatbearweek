@@ -5,7 +5,8 @@ import { requireAdmin } from "@/lib/adminGuard";
 import { saveUpload, deleteUpload } from "@/lib/upload";
 import { eq } from "drizzle-orm";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const { error } = await requireAdmin();
   if (error) return error;
 

@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 // Anyone can view anyone else's bracket, but ONLY once the bracket is
 // locked — brackets are secret from other players until then, matching the
 // personal /api/bracket route's own lock rule for edits.
-export async function GET(_req: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ userId: string }> }) {
+  const params = await props.params;
   const { error } = await requireAuth();
   if (error) return error;
 

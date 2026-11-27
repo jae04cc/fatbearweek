@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 // a card that has to stay readable inline.
 const MAX_BODY_LENGTH = 1000;
 
-export async function GET(_req: NextRequest, { params }: { params: { blockId: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ blockId: string }> }) {
+  const params = await props.params;
   const { error } = await requireAuth();
   if (error) return error;
 
@@ -37,7 +38,8 @@ export async function GET(_req: NextRequest, { params }: { params: { blockId: st
   });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { blockId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ blockId: string }> }) {
+  const params = await props.params;
   const { session, error } = await requireAuth();
   if (error) return error;
 

@@ -5,7 +5,8 @@ import { resolveUploadPath, contentTypeForFilename } from "@/lib/upload";
 
 const SAFE_FILENAME = /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp|gif)$/;
 
-export async function GET(_req: NextRequest, { params }: { params: { filename: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ filename: string }> }) {
+  const params = await props.params;
   // Uploaded bear/announcement photos are pool content — behind login like
   // everything else. Browsers send the session cookie with <img> requests, so
   // this is transparent to logged-in users and blocks anonymous hot-linking.

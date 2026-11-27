@@ -4,7 +4,8 @@ import { matchups } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/adminGuard";
 import { eq, or } from "drizzle-orm";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const { error } = await requireAdmin();
   if (error) return error;
 

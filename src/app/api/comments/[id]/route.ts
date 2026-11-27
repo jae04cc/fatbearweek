@@ -4,7 +4,8 @@ import { requireAuth } from "@/lib/adminGuard";
 import { postComments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const { session, error } = await requireAuth();
   if (error) return error;
 
